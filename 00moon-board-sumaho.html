@@ -33,7 +33,7 @@
 /* --- 修正：スマホ(iPhone)で見た時は2列を基本にする --- */
 .planner-grid { 
     display: grid; 
-    grid-template-columns: repeat(2, 1fr); /* iPhoneで100%の時、2列になります */
+    grid-template-columns: repeat(2, minmax(150px, 1fr)); /* iPhoneで100%の時、2列になります */
     gap: 10px;
     max-width: 1500px;
     margin: 0 auto;
@@ -338,6 +338,7 @@ box-sizing: border-box;
 </script>
 </body>
 </html>
+
 
 
 
