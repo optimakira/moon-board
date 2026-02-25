@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>たまごのウィッシュリスト</title>
+
+    <script>
+      const myPassword = "jo"; // ムーンボードと同じ
+      let input = prompt("合言葉を入力してください：");
+      
+      if (input !== myPassword) {
+        alert("合言葉がちがいます！表示できません。");
+        document.write("<h1 style='text-align:center;margin-top:100px;'>閲覧権限がありません</h1>");
+        window.stop(); 
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        :root {
+            --raw-color: #fffde7;
+            --boiled-color: #e3f2fd;
+            --marinated-color: #fce4ec;
+            --todo-color: #f5f5f5;
+            --harvest-color: #e8f5e9;
+            --shell-color: #f1f1f1;
+        }
+/* ページ全体を最初は隠しておく */
+body {
+    opacity: 0;
+    transition: opacity 0.5s ease; /* パッと出すための演出 */
+}
+
+{ font-family: sans-serif; background-color: #eceff1; margin: 0; padding: 20px; color: #37474f; }
+        .container { display: flex; gap: 20px; max-width: 1600px; margin: 0 auto; flex-wrap: wrap; align-items: flex-start; }
+        .section { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); box-sizing: border-box; min-width: 320px; }
+        .section-wishes { flex: 7; min-width: 600px; } 
+        .section-side { flex: 3; min-width: 320px; }
+        .section-harvest { flex: 1 1 100%; margin-top: 10px; }
+        h2 { border-bottom: 2px solid #333; padding-bottom: 10px; font-size: 1.2rem; display: flex; justify-content: space-between; align-items: center; }
+        .input-box { margin-bottom: 20px; border: 2px solid #eee; padding: 15px; border-radius: 15px; }
+        input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; }
+        .egg-btns { display: flex; gap: 5px; }
+        .egg-btns button { flex: 1; padding: 8px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-raw { background: #fff176; }
+        .btn-boiled { background: #81d4fa; }
+        .btn-marinated { background: #f48fb1; }
+        .status-bar { background: #37474f; color: white; padding: 15px; border-radius: 15px; margin-bottom: 20px; font-size: 0.9rem; }
+        .alert { color: #ffab91; font-weight: bold; margin-top: 5px; display: block; }
+        .handle { cursor: grab; padding-right: 8px; color: #ccc; }
+        .handle:active { cursor: grabbing; }
+        .sortable-ghost { opacity: 0.4; background: #cfd8dc !important; border: 2px dashed #999; }
+        #wishList { display: grid; gap: 15px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); min-height: 50px; }
+        .item { padding: 15px; border-radius: 12px; position: relative; border-left: 10px solid #ccc; box-sizing: border-box; background: white; margin-bottom: 10px; }
+        .item.raw { border-color: #fbc02d; background: var(--raw-color); }
+        .item.boiled { border-color: #0288d1; background: var(--boiled-color); }
+        .item.marinated { border-color: #c2185b; background: var(--marinated-color); }
+        .item.todo { border-color: #90a4ae; background: var(--todo-color); }
+        .todo-legend { display: flex; flex-wrap: wrap; gap: 5px; font-size: 0.7rem; margin-bottom: 10px; color: #666; justify-content: center; }
+        .status-icon { cursor: pointer; user-select: none; display: inline-block; width: 24px; text-align: center; font-size: 1.1rem; }
+        .task-row { display: flex; align-items: flex-start; gap: 8px; }
+        .task-text { flex: 1; cursor: pointer; line-height: 1.4; font-weight: bold; }
+        .st-done { text-decoration: line-through; color: #aaa; }
+        .st-cancel { text-decoration: line-through; opacity: 0.5; color: #bbb; }
+        .subtask-list { margin-left: 5px; margin-top: 8px; border-left: 2px solid #e0e0e0; padding-left: 8px; min-height: 5px; }
+        .subtask-item { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; margin-bottom: 4px; background: rgba(255,255,255,0.4); border-radius: 4px; padding: 2px; }
+        .sub-input-box { margin-top: 8px; display: flex; gap: 4px; }
+        .sub-input-box input { font-size: 0.75rem; padding: 4px; margin-bottom: 0; }
+        .btn-sub-add { font-size: 0.7rem; padding: 2px 8px; background: #eee; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; }
+        .harvest-group { margin-bottom: 25px; }
+        .month-header { font-size: 1rem; color: #2e7d32; border-bottom: 1px dashed #4caf50; margin-bottom: 12px; padding-bottom: 5px; font-weight: bold; }
+        .item.harvest { border-left: 5px solid #4caf50; background: var(--harvest-color); padding: 12px; margin-bottom: 8px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 4px; }
+        .date-info { font-size: 0.7rem; color: #888; margin-top: 8px; display: block; }
+        .actions { margin-top: 10px; display: flex; gap: 5px; flex-wrap: wrap; }
+        .actions button { font-size: 0.7rem; padding: 4px 8px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; background: white; }
+        .tag { font-size: 0.7rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="section section-wishes">
+        <h2>🥚 たまごウィッシュリスト</h2>
+        <div class="status-bar" id="statusBar">比率: 加熱待ち...</div>
+        <div class="input-box">
+            <input type="text" id="wishInput" placeholder="純粋な願いを入力（ニヤニヤできる？）">
+            <div class="egg-btns">
+                <button class="btn-raw" onclick="addWish('raw')">生卵🥚</button>
+                <button class="btn-boiled" onclick="addWish('boiled')">ゆで卵🍳</button>
+                <button class="btn-marinated" onclick="addWish('marinated')">煮卵🍲</button>
+            </div>
+        </div>
+        <div id="wishList"></div>
+    </div>
+
+    <div class="section section-side">
+        <h2>📝 指示書 (ToDo)</h2>
+        <div class="todo-legend">
+            <span>⬜️未着手</span><span>☑完了</span><span>✍️着手</span><span>😴待ち</span><span>⏸️持越</span><span>☒中止</span>
+        </div>
+        <div class="input-box">
+            <input type="text" id="todoInput" placeholder="淡々とやるべきタスクを入力...">
+            <button style="width:100%; padding:10px; border-radius:8px; cursor:pointer;" onclick="addTodo()">ToDo追加</button>
+        </div>
+        <div id="todoList"></div>
+    </div>
+
+    <div class="section section-harvest">
+        <h2>✨ 収穫ボード (Harvest)</h2>
+        <div id="harvestList"></div>
+        <div id="shellSection">
+            <button class="shell-toggle" onclick="toggleShell()">🐣 卵の殻 アーカイブを表示</button>
+            <div id="shellList" style="display: none; margin-top:15px;"></div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    // --- Firebaseの準備 ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBEE451bCNLV-Ty337LyZryFlZqqiN4mxo",
+        authDomain: "moonboard-27ebf.firebaseapp.com",
+        projectId: "moonboard-27ebf",
+        storageBucket: "moonboard-27ebf.firebasestorage.app",
+        messagingSenderId: "437383444283",
+        appId: "1:437383444283:web:f2fab00c5e190b2ca9291e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const docRef = doc(db, "data", "tamago-data");
+
+    // --- データと状態 ---
+    let wishes = [];
+    let todos = [];
+    let harvests = [];
+    let shells = [];
+    let isFirstLoad = true;
+
+    const statuses = [
+        { icon: '⬜️', class: '' }, { icon: '☑', class: 'st-done' }, { icon: '✍️', class: '' },
+        { icon: '😴', class: '' }, { icon: '⏸️', class: '' }, { icon: '☒', class: 'st-cancel' }
+    ];
+
+    const formatDate = (ts) => new Date(ts).toLocaleDateString('ja-JP');
+    const formatYearMonth = (ts) => { const d = new Date(ts); return `${d.getFullYear()}年 ${d.getMonth() + 1}月`; };
+
+    // --- Firebase リアルタイム購読 ---
+    onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            wishes = data.wishes || [];
+            todos = data.todos || [];
+            harvests = data.harvests || [];
+            shells = data.shells || [];
+        }
+        render();
+// データが揃ったので、画面を「表示（不透明度1）」にする
+    document.body.style.opacity = "1"; 
+    
+    isFirstLoad = false;
+    });
+
+    async function saveToCloud() {
+        await setDoc(docRef, { wishes, todos, harvests, shells });
+    }
+
+    // --- ボタンから呼ぶ関数を登録 ---
+    window.addWish = (type) => {
+        const input = document.getElementById('wishInput');
+        if (!input.value) return;
+        wishes.unshift({ text: input.value, type: type, created: Date.now(), subtasks: [] });
+        input.value = '';
+        saveToCloud();
+    };
+
+    window.addTodo = (text = null) => {
+        const input = document.getElementById('todoInput');
+        const val = text || input.value;
+        if (!val) return;
+        todos.unshift({ text: val, statusIdx: 0, subtasks: [] });
+        if (!text) input.value = '';
+        saveToCloud();
+    };
+
+    window.addWishSubTask = (pIdx, inputEl) => {
+        if (!inputEl.value) return;
+        if (!wishes[pIdx].subtasks) wishes[pIdx].subtasks = [];
+        wishes[pIdx].subtasks.push({ text: inputEl.value, statusIdx: 0 });
+        inputEl.value = ''; 
+        saveToCloud();
+    };
+
+    window.toggleWishSubStatus = (pIdx, sIdx) => {
+        wishes[pIdx].subtasks[sIdx].statusIdx = (wishes[pIdx].subtasks[sIdx].statusIdx + 1) % statuses.length;
+        saveToCloud();
+    };
+
+    window.deleteWishSubTask = (pIdx, sIdx) => {
+        wishes[pIdx].subtasks.splice(sIdx, 1);
+        saveToCloud();
+    };
+
+    window.addSubTask = (pIdx, inputEl) => {
+        if (!inputEl.value) return;
+        if (!todos[pIdx].subtasks) todos[pIdx].subtasks = [];
+        todos[pIdx].subtasks.push({ text: inputEl.value, statusIdx: 0 });
+        inputEl.value = ''; 
+        saveToCloud();
+    };
+
+    window.toggleSubStatus = (pIdx, sIdx) => {
+        todos[pIdx].subtasks[sIdx].statusIdx = (todos[pIdx].subtasks[sIdx].statusIdx + 1) % statuses.length;
+        saveToCloud();
+    };
+
+    window.deleteSubTask = (pIdx, sIdx) => {
+        todos[pIdx].subtasks.splice(sIdx, 1);
+        saveToCloud();
+    };
+
+    window.jobChange = (index) => {
+        const item = wishes[index];
+        if (item.type === 'raw') item.type = 'boiled';
+        else if (item.type === 'boiled') item.type = 'marinated';
+        else if (item.type === 'marinated') {
+            if(confirm("煮卵を指示書（ToDo）へ移動させますか？")) {
+                todos.unshift({ text: item.text, statusIdx: 0, subtasks: item.subtasks || [] });
+                wishes.splice(index, 1);
+            }
+        }
+        saveToCloud();
+    };
+
+    window.toggleTodoStatus = (idx) => { todos[idx].statusIdx = (todos[idx].statusIdx + 1) % statuses.length; saveToCloud(); };
+    window.harvestWish = (index) => {
+        const item = wishes[index]; const now = Date.now();
+        harvests.unshift({ text: item.text, created: item.created, harvested: now, days: Math.floor((now - item.created) / 86400000) });
+        wishes.splice(index, 1); saveToCloud();
+    };
+    window.moveToShell = (index) => {
+        const item = wishes[index];
+        shells.unshift({ text: item.text, created: item.created, shelved: Date.now() });
+        wishes.splice(index, 1); saveToCloud();
+    };
+    window.deleteTodo = (idx) => { if(confirm("ToDoを削除しますか？")) { todos.splice(idx, 1); saveToCloud(); } };
+    window.deleteWish = (i) => { if(confirm("削除しますか？")) { wishes.splice(i, 1); saveToCloud(); } };
+    window.toggleShell = () => { const list = document.getElementById('shellList'); list.style.display = list.style.display === 'none' ? 'block' : 'none'; };
+    window.deleteHarvest = (i) => { harvests.splice(i, 1); saveToCloud(); };
+    window.deleteShell = (i) => { shells.splice(i, 1); saveToCloud(); };
+
+    function render() {
+        const wishContainer = document.getElementById('wishList');
+        const todoContainer = document.getElementById('todoList');
+        const harvestContainer = document.getElementById('harvestList');
+        const shellContainer = document.getElementById('shellList');
+        
+        wishContainer.innerHTML = ''; todoContainer.innerHTML = ''; harvestContainer.innerHTML = ''; shellContainer.innerHTML = '';
+        let counts = { raw: 0, boiled: 0, marinated: 0 };
+
+        wishes.forEach((item, i) => {
+            counts[item.type]++;
+            const div = document.createElement('div');
+            div.className = `item ${item.type}`;
+            div.dataset.id = i;
+
+            const subHtml = (item.subtasks || []).map((sub, si) => {
+                const ss = statuses[sub.statusIdx || 0];
+                return `<div class="subtask-item">
+                    <span class="handle">⠿</span>
+                    <span class="status-icon" onclick="toggleWishSubStatus(${i},${si})">${ss.icon}</span>
+                    <span class="sub-title ${ss.class}">${sub.text}</span>
+                    <span style="cursor:pointer; color:#ccc; margin-left:auto;" onclick="deleteWishSubTask(${i},${si})">×</span>
+                </div>`;
+            }).join('');
+
+            const label = item.type === 'raw' ? '生卵 (WISH)' : item.type === 'boiled' ? 'ゆで卵 (HOPE)' : '煮卵 (READY)';
+            div.innerHTML = `
+                <div style="display:flex; align-items:center;">
+                    <span class="handle">⠿</span>
+                    <span class="tag">${label}</span>
+                </div>
+                <strong>${item.text}</strong>
+                <div class="subtask-list" data-parent-idx="${i}">${subHtml}</div>
+                <div class="sub-input-box">
+                    <input type="text" placeholder="子タスク..." onkeypress="if(event.key==='Enter') addWishSubTask(${i}, this)">
+                    <button class="btn-sub-add" onclick="addWishSubTask(${i}, this.previousElementSibling)">+</button>
+                </div>
+                <span class="date-info">🌱 追加: ${formatDate(item.created)}</span>
+                <div class="actions">
+                    <button onclick="jobChange(${i})">🔥 成長</button>
+                    <button onclick="harvestWish(${i})" style="color: #2e7d32;">✨ 収穫</button>
+                    <button onclick="moveToShell(${i})" style="color: #888;">🐣 殻へ</button>
+                    <button onclick="deleteWish(${i})">🗑️</button>
+                </div>`;
+            wishContainer.appendChild(div);
+
+            new Sortable(div.querySelector('.subtask-list'), {
+                handle: '.handle', animation: 150, onEnd: (evt) => {
+                    const subtasks = wishes[i].subtasks;
+                    const [movedItem] = subtasks.splice(evt.oldIndex, 1);
+                    subtasks.splice(evt.newIndex, 0, movedItem);
+                    saveToCloud();
+                }
+            });
+        });
+
+        todos.forEach((item, i) => {
+            const s = statuses[item.statusIdx || 0];
+            const div = document.createElement('div');
+            div.className = 'item todo';
+            div.dataset.id = i;
+
+            const subHtml = (item.subtasks || []).map((sub, si) => {
+                const ss = statuses[sub.statusIdx || 0];
+                return `<div class="subtask-item">
+                    <span class="handle">⠿</span>
+                    <span class="status-icon" onclick="toggleSubStatus(${i},${si})">${ss.icon}</span>
+                    <span class="sub-title ${ss.class}">${sub.text}</span>
+                    <span style="cursor:pointer; color:#ccc; margin-left:auto;" onclick="deleteSubTask(${i},${si})">×</span>
+                </div>`;
+            }).join('');
+
+            div.innerHTML = `
+                <div class="task-row">
+                    <span class="handle">⠿</span>
+                    <span class="status-icon" onclick="toggleTodoStatus(${i})">${s.icon}</span>
+                    <span class="task-text ${s.class}" onclick="toggleTodoStatus(${i})">${item.text}</span>
+                    <button onclick="deleteTodo(${i})" style="border:none; background:none; cursor:pointer; font-size:12px; color:#ccc;">🗑️</button>
+                </div>
+                <div class="subtask-list">${subHtml}</div>
+                <div class="sub-input-box">
+                    <input type="text" placeholder="子タスク..." onkeypress="if(event.key==='Enter') addSubTask(${i}, this)">
+                    <button class="btn-sub-add" onclick="addSubTask(${i}, this.previousElementSibling)">+</button>
+                </div>`;
+            todoContainer.appendChild(div);
+
+            new Sortable(div.querySelector('.subtask-list'), {
+                handle: '.handle', animation: 150, onEnd: (evt) => {
+                    const subtasks = todos[i].subtasks;
+                    const [movedItem] = subtasks.splice(evt.oldIndex, 1);
+                    subtasks.splice(evt.newIndex, 0, movedItem);
+                    saveToCloud();
+                }
+            });
+        });
+
+        renderHarvestAndShells(harvestContainer, shellContainer);
+        updateStatusBar(counts, wishes.length);
+        initMainSortables();
+    }
+
+    function initMainSortables() {
+        new Sortable(document.getElementById('wishList'), {
+            handle: '.handle', animation: 150, onEnd: (evt) => {
+                const [movedItem] = wishes.splice(evt.oldIndex, 1);
+                wishes.splice(evt.newIndex, 0, movedItem);
+                saveToCloud();
+            }
+        });
+        new Sortable(document.getElementById('todoList'), {
+            handle: '.handle', animation: 150, onEnd: (evt) => {
+                const [movedItem] = todos.splice(evt.oldIndex, 1);
+                todos.splice(evt.newIndex, 0, movedItem);
+                saveToCloud();
+            }
+        });
+    }
+
+    function renderHarvestAndShells(harvestContainer, shellContainer) {
+        const groups = {};
+        harvests.forEach((item, idx) => { const key = formatYearMonth(item.harvested); if (!groups[key]) groups[key] = []; groups[key].push({...item, originalIndex: idx}); });
+        Object.keys(groups).forEach(month => {
+            const g = document.createElement('div'); g.className = 'harvest-group'; g.innerHTML = `<div class="month-header">📅 ${month} の収穫</div>`;
+            groups[month].forEach(item => {
+                const d = document.createElement('div'); d.className = 'item harvest';
+                d.innerHTML = `<div class="harvest-main"><strong>${item.text}</strong><button onclick="deleteHarvest(${item.originalIndex})" style="border:none; background:none; cursor:pointer;">🗑️</button></div><div class="harvest-detail">📅 ${formatDate(item.created)} → ${formatDate(item.harvested)}　⏳ ${item.days}日間</div>`;
+                g.appendChild(d);
+            });
+            harvestContainer.appendChild(g);
+        });
+        shells.forEach((item, i) => {
+            const sd = document.createElement('div'); sd.className = 'shell-item';
+            sd.innerHTML = `<span style="font-size:0.8rem;">・${item.text} <small>(${formatDate(item.created)}～${formatDate(item.shelved)})</small></span><button onclick="deleteShell(${i})" style="border:none; background:none; color:#ccc; cursor:pointer;">🗑️</button>`;
+            shellContainer.appendChild(sd);
+        });
+    }
+
+    function updateStatusBar(counts, totalLength) {
+        const total = totalLength || 1;
+        document.getElementById('statusBar').innerHTML = `比率: 生 ${Math.round((counts.raw/total)*100)}% | ゆで ${Math.round((counts.boiled/total)*100)}% | 煮 ${Math.round((counts.marinated/total)*100)}% <span id="shrinkAlert" class="alert"></span>`;
+        if (counts.raw === 0 && totalLength > 0) document.getElementById('shrinkAlert').innerText = "⚠️ 警告：生卵（純粋な願い）が不足しています！";
+    }
+
+</script>
+</body>
+</html>
