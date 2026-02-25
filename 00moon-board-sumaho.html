@@ -154,19 +154,24 @@ display: grid;
         
         .edit-column { flex: 1; position: relative; display: flex; flex-direction: column; height: auto; }
         
-        .display-area {
-            flex-grow: 1; font-size: 0.8rem; 
-            line-height: 1.5; 
-            padding: 6px; 
-            border-radius: 6px; 
-            background: #fafafa; border: 1px solid #eee; cursor: text; box-sizing: border-box; width: 100%; min-height: 130px; }
-        
-        .edit-area { 
-            width: 100%; outline: none; font-size: 0.8rem; 
-            line-height: 1.5; padding: 6px; border-radius: 6px; 
-            background: #fff; border: 1px solid #7a82f0; white-space: pre-wrap; overflow: hidden;
-            display: none; resize: none; box-sizing: border-box; }
-        
+ .display-area, .edit-area { 
+    font-size: 0.85rem; 
+    line-height: 1.5; 
+    padding: 8px; 
+    border-radius: 8px; 
+    box-sizing: border-box; 
+    width: 100%; 
+    min-height: 130px; /* ここで高さを揃える */
+}
+
+.edit-area { 
+    background: #fff; 
+    border: 1px solid #7a82f0; 
+    outline: none; 
+    resize: none; 
+    overflow: hidden; /* スクロールバーを出さない */
+    display: none; 
+}        
         .task-item { display: flex; align-items: flex-start; gap: 5px; }
         .task-done { text-decoration: line-through; color: #bbb; }
         .status-msg { font-size: 0.7rem; color: #2ecc71; text-align: center; height: 1em; margin-bottom: 10px; position: fixed; bottom: 10px; width: 100%; z-index: 1000; }
@@ -344,17 +349,19 @@ display: grid;
 
 window.startEdit = (displayEl) => {
     const editEl = displayEl.nextElementSibling;
-    // 表示エリアの「現在の高さ」をそのまま入力エリアに引き継ぐ
-    const currentHeight = displayEl.offsetHeight; 
-    
+    // 表示エリアの現在の「見た目の高さ」を正確に取得
+    const currentActualHeight = displayEl.offsetHeight; 
+
     displayEl.style.display = 'none';
     editEl.style.display = 'block';
     
-    editEl.style.height = currentHeight + 'px'; // 高さを同期
-    autoResize(editEl); // 内容に合わせてさらに伸ばす
+    // 入力エリアの「最小高さ」を、切り替える直前の高さに固定する
+    editEl.style.height = currentActualHeight + 'px'; 
+    
+    // 内容に合わせて自動拡張
+    autoResize(editEl); 
     editEl.focus();
 }
-
     window.finishEdit = async (editEl) => {
         const displayEl = editEl.previousElementSibling;
         const key = editEl.getAttribute('data-key');
@@ -377,6 +384,7 @@ window.startEdit = (displayEl) => {
 </script>
 </body>
 </html>
+
 
 
 
