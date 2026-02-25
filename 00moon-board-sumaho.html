@@ -48,8 +48,22 @@
         .status-line { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; min-height: 1.2em; }
         .egg-status { font-size: 0.75rem; color: #4169e1; font-weight: bold; flex-shrink: 0; }
         .phase-guide { font-size: 0.65rem; color: #666; font-weight: normal; }
-        .shift-selector { background: #f8f9fa; padding: 5px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #eee; display: flex; flex-wrap: wrap; gap: 4px; min-height: 45px; height: auto; align-content: flex-start; }
-       .shift-tag { 
+        .shift-selector {
+    background: #f8f9fa;
+    padding: 5px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border: 1px solid #eee;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-height: 45px;
+    height: auto;
+    align-content: flex-start;
+    /* --- ここを追加！ --- */
+    position: relative;
+    z-index: 30; /* 入力欄（z-index: 1）よりもずっと大きくする */
+}
     font-size: 0.6rem; 
     color: #555; 
     background: #fff; 
@@ -66,8 +80,23 @@
         .editor-container { display: flex; gap: 8px; flex-grow: 1; height: auto; min-height: 130px; position: relative; } 
         .edit-column { flex: 1; position: relative; display: flex; flex-direction: column; height: auto; }
         .edit-area { width: 100%; height: auto; outline: none; font-size: 0.8rem; line-height: 1.5; padding: 6px; border-radius: 6px; background: #fff; border: 1px solid #7a82f0; white-space: pre-wrap; overflow-y: hidden; z-index: 10; box-sizing: border-box; display: none; resize: none; }
-        .display-area { flex-grow: 1; font-size: 0.8rem; line-height: 1.5; padding: 6px; border-radius: 6px; background: #fafafa; border: 1px solid #eee; cursor: text; box-sizing: border-box; width: 100%; height: auto; min-height: 130px; }
-        .task-item { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+       .display-area {
+    flex-grow: 1;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    padding: 6px;
+    border-radius: 6px;
+    background: #fafafa;
+    border: 1px solid #eee;
+    cursor: text;
+    box-sizing: border-box;
+    width: 100%;
+    height: auto;
+    min-height: 130px;
+    /* --- ここを追加！ --- */
+    position: relative;
+    z-index: 1; 
+}
         .task-item input { cursor: pointer; margin: 0; }
         .task-done { text-decoration: line-through; color: #bbb; }
         .status-msg { font-size: 0.7rem; color: #2ecc71; text-align: center; height: 1em; margin-bottom: 10px; }
@@ -307,4 +336,5 @@ onSnapshot(docRef, (docSnap) => {
 </body>
 
 </html>
+
 
