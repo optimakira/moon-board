@@ -34,9 +34,7 @@
 .planner-grid { 
     display: grid; 
     grid-template-columns: repeat(2, 1fr); /* iPhoneで100%の時、2列になります */
-    gap: 12px; 
-    max-width: 1500px; 
-    margin: 0 auto; 
+min-width: 0; /* 縮小を邪魔しない設定 */
 }
 
 /* --- 画面幅が600px以上（少し大きめのスマホやタブレット） --- */
@@ -305,6 +303,7 @@
 </script>
 </body>
 </html>
+
 
 
 
