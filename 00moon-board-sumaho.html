@@ -38,7 +38,21 @@
     max-width: 1500px;
     margin: 0 auto;
 }
-
+/* --- 2. スマホ（幅599px以下）の時だけ、カードの「形」を固定する --- */
+@media (max-width: 599px) {
+    .day-card {
+        /* カードがこれ以上細くならないように「最小幅」を固定 */
+        /* これにより、拡大しても細長くなりません */
+        min-width: 175px; 
+        min-height: 280px;
+    }
+    .is-focus {
+        /* 2列の時は全幅、縮小して3列以上になれば2個分の幅 */
+        grid-column: span 2;
+        min-width: 175px;
+    }
+}
+        
 /* --- 画面幅が600px以上（少し大きめのスマホやタブレット） --- */
 @media (min-width: 600px) {
     .planner-grid { 
@@ -315,5 +329,6 @@
 </script>
 </body>
 </html>
+
 
 
