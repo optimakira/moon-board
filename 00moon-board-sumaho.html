@@ -30,14 +30,14 @@
         .info { font-size: 0.85rem; color: #666; padding-top: 10px; border-top: 1px solid #eee; width: 100%; text-align: center; }
         
         /* グリッド設定 */
-        .planner-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; max-width: 1500px; margin: 0 auto; }
-        @media (min-width: 600px) { .planner-grid { grid-template-columns: repeat(3, 1fr); } }
+        .planner-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 12px; max-width: 1500px; margin: 0 auto; }
+        @media (min-width: 600px) { .planner-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 900px) { .planner-grid { grid-template-columns: repeat(3, 1fr); } }
         @media (min-width: 1200px) { .planner-grid { grid-template-columns: repeat(4, 1fr); } }
 
         /* カードのデザイン */
         .day-card { background: white; border-radius: 12px; padding: 12px; min-height: 260px; height: auto; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.05); position: relative; border-top: 6px solid #eee; }
-        .is-focus { grid-column: span 2; background: #f0f4ff; }
+        .is-focus { grid-column: span 1; background: #f0f4ff; }
         @media (min-width: 900px) { .is-focus { grid-column: span 2; } }
         
         .is-sat .date-num, .is-sat .day-of-week { color: #4466ff; }
@@ -277,4 +277,5 @@
 </script>
 </body>
 </html>
+
 
