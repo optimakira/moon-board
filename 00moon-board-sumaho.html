@@ -32,8 +32,9 @@
         /* グリッド設定 */
 /* --- 修正：スマホ(iPhone)で見た時は2列を基本にする --- */
 .planner-grid { 
-    display: grid; 
-    grid-template-columns: repeat(2, 1fr);
+display: grid; 
+    /* 基本は2列。minmaxを使うことで縮小した時に列が増える余地を作ります */
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 12px;
     max-width: 1500px;
     margin: 0 auto;
@@ -41,36 +42,12 @@
     box-sizing: border-box;
 }
         
-/* --- 2. スマホ（幅599px以下）の時だけ、カードの「形」を固定する --- */
+/* --- 2. 画面幅に応じた列数の「上書き」 --- */
+/* スマホ（100%）の時は2列を維持 */
 @media (max-width: 599px) {
-    .day-card {
-        /* 170pxは指定せず、画面幅に合わせて「伸び縮み」させる */
-        min-width: 160px;
-/* 「今日」ラベルがはみ出さないように調整 */
-    .is-today::after {
-        left: 2px !important; /* 左端ギリギリに寄せてはみ出しを防ぐ */
-        font-size: 0.55rem !important; /* 少し小さく */
-        padding: 1px 4px !important;
-    }
-        
-      /*  width: 100%;
-      /*  box-sizing: border-box;
-        /* 中身がはみ出さないための保険 */
-      /*  min-width: 0; 
-        overflow: hidden;
-        /* ...デザイン要素... */
-    }
-    /* テーマ欄：ここが重要！強制的に横いっぱいに広げる */
-    .planner-grid > div[style*="grid-column"] {
-        grid-column: 1 / span 2 !important;
-        
-    .is-focus {
-        /* 2列の時は全幅、縮小して3列以上になれば2個分の幅 */
-        grid-column: span 2;
-        min-width: 0px;
-    }
+    .planner-grid { grid-template-columns: repeat(2, 1fr); }
+    .day-card { min-width: 160px; } /* カードが痩せないようにガード */
 }
-        
 /* --- 画面幅が600px以上（少し大きめのスマホやタブレット） --- */
 @media (min-width: 600px) {
     .planner-grid { 
@@ -91,13 +68,19 @@
         grid-template-columns: repeat(6, 1fr); /* ここを6列に戻しました */
     }
 }
+/* --- 3. 特殊なアイテムの広がり設定 --- */
 
-    /* --- 4. 「今日」のデザイン自体の微調整 --- */
-.is-today { 
-    outline: 3px solid #7a82f0; 
-    outline-offset: -3px; /* 外側ではなく内側に枠線を引くことで、隣のカードとの干渉を防ぐ */
-    z-index: 10; 
+/* テーマ欄：列数がいくつになっても、常に「1列目から最後」までぶち抜く */
+.planner-grid > div:first-child {
+    grid-column: 1 / -1 !important;
 }
+
+/* 注目の日（新月・満月）：常に2列分使う */
+.is-focus { 
+    grid-column: span 2; 
+    background: #f0f4ff; !important;
+}
+    
     
         /* カードのデザイン */
         .day-card {
@@ -113,13 +96,29 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
             position: relative; 
             border-top: 6px solid #eee; }
-/* --- 注目のアイテム（is-focus）の挙動 --- */
-.is-focus { 
-    grid-column: span 2; /* 2列分使う（スマホでは横幅いっぱい、PCでは2/6幅になる） */
-    background: #f0f4ff; 
+
+ /* --- 4. 「今日」のデザイン自体の微調整 --- */
+.is-today { 
+    outline: 3px solid #7a82f0; 
+    outline-offset: -3px; /* 外側ではなく内側に枠線を引くことで、隣のカードとの干渉を防ぐ */
+    z-index: 10; 
 }
-        @media (min-width: 900px) { .is-focus { grid-column: span 2; } }
+.is-today::after { 
+            content: "今日"; 
+            position: absolute; 
+            top: 2px !important; 
+            left: 2px !important; 
+            background: #7a82f0; 
+            color: white; 
+            font-size: 0.6rem; 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+            font-weight: bold; 
+            z-index: 20;
+        }
         
+
+        /* --- 6. その他デザイン要素（色・パーツ） --- */
         .is-sat .date-num, .is-sat .day-of-week { color: #4466ff; }
         .is-sun .date-num, .is-sun .day-of-week { color: #ff4444; }
         .waxing { border-top-color: #ffd700; } 
@@ -357,6 +356,7 @@
 </script>
 </body>
 </html>
+
 
 
 
