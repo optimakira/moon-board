@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ムーンボード Firebase同期版</title>
+    <style>
+        /* 元のスタイルをすべて継承 */
+        body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif; background: #f0f0f2; padding: 20px; color: #333; }
+        .header { display: flex; flex-direction: column; align-items: center; gap: 20px; margin-bottom: 25px; }
+        .title-area h1 { font-size: 1.8rem; margin: 0; }
+        .year-display { font-size: 1rem; color: #888; font-weight: normal; }
+        .nav-console { display: flex; flex-direction: column; align-items: center; gap: 15px; background: #fff; padding: 15px 30px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); width: fit-content; }
+        .jump-group { display: flex; gap: 8px; align-items: center; }
+        select { padding: 6px 12px; border-radius: 6px; border: 1px solid #ddd; background: #fff; font-size: 1rem; cursor: pointer; }
+        .controls { display: flex; align-items: center; gap: 10px; }
+        button { padding: 8px 16px; cursor: pointer; border-radius: 8px; border: 1px solid #eee; background: #f8f9fa; font-size: 0.85rem; font-weight: bold; color: #444; }
+        button:hover { background: #7a82f0; color: white; border-color: #7a82f0; }
+        .info { font-size: 0.85rem; color: #666; padding-top: 10px; border-top: 1px solid #eee; width: 100%; text-align: center; }
+        .planner-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 1500px; margin: 0 auto; }
+        @media (min-width: 800px) { .planner-grid { grid-template-columns: repeat(4, 1fr); } }
+        @media (min-width: 1100px) { .planner-grid { grid-template-columns: repeat(6, 1fr); } }
+        .day-card { background: white; border-radius: 12px; padding: 12px; min-height: 260px; height: auto; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.05); position: relative; border-top: 6px solid #eee; }
+        .is-focus { grid-column: span 2; background: #f0f4ff; } 
+        .is-sat .date-num, .is-sat .day-of-week { color: #4466ff; }
+        .is-sun .date-num, .is-sun .day-of-week { color: #ff4444; }
+        .waxing { border-top-color: #ffd700; } 
+        .waning { border-top-color: #4169e1; } 
+        .new-moon-blue { border-top-color: #4169e1 !important; } 
+        .is-today { outline: 3px solid #7a82f0; outline-offset: 2px; z-index: 10; }
+        .is-today::after { content: "今日"; position: absolute; top: -12px; left: 10px; background: #7a82f0; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        .date-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; height: 25px; }
+        .date-main { display: flex; align-items: baseline; gap: 4px; }
+        .date-num { font-weight: bold; font-size: 1.1rem; }
+        .day-of-week { font-size: 0.8rem; font-weight: bold; color: #666; }
+        .moon-age { font-size: 0.7rem; color: #999; }
+        .status-line { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; min-height: 1.2em; }
+        .egg-status { font-size: 0.75rem; color: #4169e1; font-weight: bold; flex-shrink: 0; }
+        .phase-guide { font-size: 0.65rem; color: #666; font-weight: normal; }
+        .shift-selector { background: #f8f9fa; padding: 5px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #eee; display: flex; flex-wrap: wrap; gap: 4px; min-height: 45px; height: auto; align-content: flex-start; }
+        .shift-tag { font-size: 0.6rem; color: #555; background: #fff; border: 1px solid #ddd; padding: 1px 4px; border-radius: 3px; cursor: pointer; }
+        .shift-tag.active { background: #7a82f0; color: white; border-color: #7a82f0; }
+        .editor-container { display: flex; gap: 8px; flex-grow: 1; height: auto; min-height: 130px; position: relative; } 
+        .edit-column { flex: 1; position: relative; display: flex; flex-direction: column; height: auto; }
+        .edit-area { width: 100%; height: auto; outline: none; font-size: 0.8rem; line-height: 1.5; padding: 6px; border-radius: 6px; background: #fff; border: 1px solid #7a82f0; white-space: pre-wrap; overflow-y: hidden; z-index: 10; box-sizing: border-box; display: none; resize: none; }
+        .display-area { flex-grow: 1; font-size: 0.8rem; line-height: 1.5; padding: 6px; border-radius: 6px; background: #fafafa; border: 1px solid #eee; cursor: text; box-sizing: border-box; width: 100%; height: auto; min-height: 130px; }
+        .task-item { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+        .task-item input { cursor: pointer; margin: 0; }
+        .task-done { text-decoration: line-through; color: #bbb; }
+        .status-msg { font-size: 0.7rem; color: #2ecc71; text-align: center; height: 1em; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title-area"><h1>🌑 ムーンボード <span id="year-display" class="year-display"></span></h1></div>
+        <div class="nav-console">
+            <div class="jump-group"><select id="select-year" onchange="jumpToDate()"></select><select id="select-month" onchange="jumpToDate()"></select></div>
+            <div class="controls">
+                <button onclick="movePeriod(-15)">◀ 前のフェーズ</button>
+                <button onclick="resetToToday()">今日に戻る</button>
+                <button onclick="movePeriod(15)">次のフェーズ ▶</button>
+            </div>
+            <div id="current-info" class="info"></div>
+        </div>
+    </div>
+    <div id="status" class="status-msg"></div>
+    <div id="planner" class="planner-grid"></div>
+
+<script type="module">
+    // Firebase設定
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBEE451bCNLV-Ty337LyZryFlZqqiN4mxo",
+        authDomain: "moonboard-27ebf.firebaseapp.com",
+        projectId: "moonboard-27ebf",
+        storageBucket: "moonboard-27ebf.firebasestorage.app",
+        messagingSenderId: "437383444283",
+        appId: "1:437383444283:web:f2fab00c5e190b2ca9291e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const docRef = doc(db, "data", "moon-board");
+
+    // グローバルデータ
+    let cloudData = {};
+
+    // 定数
+    const REF_DATE_JST = new Date('2026-02-17T12:00:00+09:00').getTime();
+    const REF_AGE = 29.3;
+    const LUNAR_CYCLE = 29.53059; 
+    const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
+    let currentBaseDate = new Date(); 
+
+    // Firebaseデータのリアルタイム購読
+    onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+            cloudData = docSnap.data();
+        }
+        render(); // データが変わったら画面を更新
+    });
+
+    // 保存関数
+    async function saveToCloud(key, value) {
+        cloudData[key] = value;
+        await setDoc(docRef, cloudData);
+        showSavedStatus();
+    }
+
+    // --- 元のロジック ---
+    window.setupSelectors = () => {
+        const yearSel = document.getElementById('select-year');
+        const monthSel = document.getElementById('select-month');
+        const currentYear = new Date().getFullYear();
+        for(let y = currentYear - 2; y <= currentYear + 5; y++) yearSel.add(new Option(y + "年", y));
+        for(let m = 1; m <= 12; m++) monthSel.add(new Option(m + "月", m - 1));
+        updateSelectors();
+    }
+
+    function getMoonAge(date) {
+        const targetNoon = new Date(date); targetNoon.setHours(12, 0, 0, 0);
+        const diffDays = (targetNoon.getTime() - REF_DATE_JST) / (1000 * 60 * 60 * 24);
+        let age = (REF_AGE + diffDays) % LUNAR_CYCLE;
+        return age < 0 ? age + LUNAR_CYCLE : age;
+    }
+
+    window.jumpToDate = () => {
+        currentBaseDate = new Date(document.getElementById('select-year').value, document.getElementById('select-month').value, 1);
+        render();
+    }
+    window.movePeriod = (days) => { currentBaseDate.setDate(currentBaseDate.getDate() + days); updateSelectors(); render(); }
+    window.resetToToday = () => { currentBaseDate = new Date(); updateSelectors(); render(); }
+    function updateSelectors() { document.getElementById('select-year').value = currentBaseDate.getFullYear(); document.getElementById('select-month').value = currentBaseDate.getMonth(); }
+
+    function parseTasks(text) {
+        if (!text) return "";
+        return text.split('\n').map((line, idx) => {
+            const trimmedLine = line.trim();
+            if (trimmedLine.startsWith('-')) {
+                const isDone = trimmedLine.includes('[x]');
+                const cleanText = trimmedLine.replace(/^-\s*(\[x\])?\s*/, '');
+                return `<div class="task-item"><input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleTask(this, ${idx})"> <span class="${isDone ? 'task-done' : ''}">${cleanText}</span></div>`;
+            }
+            return `<div>${line || '&nbsp;'}</div>`;
+        }).join('');
+    }
+
+    window.autoResize = (el) => {
+        if (!el) return;
+        el.style.height = 'auto';
+        const minHeight = el.id === 'phase-theme-input' ? 0 : 130;
+        const newHeight = Math.max(minHeight, el.scrollHeight);
+        el.style.height = newHeight + 'px';
+    }
+
+    window.render = () => {
+        const planner = document.getElementById('planner');
+        planner.innerHTML = "";
+        const today = new Date();
+        const ageAtBase = getMoonAge(currentBaseDate);
+        let startDate = new Date(currentBaseDate);
+        
+        const isWaxingPhase = (ageAtBase >= 28 || ageAtBase < 13.6); 
+        if (isWaxingPhase) {
+            let offset = ageAtBase < 20 ? ageAtBase : ageAtBase - LUNAR_CYCLE;
+            startDate.setDate(currentBaseDate.getDate() - Math.round(offset));
+        } else {
+            startDate.setDate(currentBaseDate.getDate() - Math.round(ageAtBase - 13.6));
+        }
+        startDate.setHours(12, 0, 0, 0);
+        
+        const phaseThemeKey = `theme_v25_${startDate.getFullYear()}${startDate.getMonth() + 1}${startDate.getDate()}`;
+        const savedTheme = cloudData[phaseThemeKey] || "";
+        
+        const startAge = getMoonAge(startDate);
+        const isNewMoonPhase = (startAge < 5 || startAge > 25);
+        const phaseIcon = isNewMoonPhase ? "🌑 NEW MOON" : "🌕 FULL MOON";
+        const phaseColor = isNewMoonPhase ? "#ffd700" : "#4169e1";
+
+        const themeSection = document.createElement('div');
+        themeSection.style.cssText = `grid-column: 1 / -1; background: #fff; padding: 20px; border-radius: 16px; margin-bottom: 20px; border-left: 10px solid ${phaseColor}; box-shadow: 0 4px 12px rgba(0,0,0,0.05);`;
+        themeSection.innerHTML = `
+            <div style="font-size: 0.75rem; color: ${phaseColor}; font-weight: bold; margin-bottom: 8px; letter-spacing: 0.1em;">${phaseIcon} PHASE THEME</div>
+            <textarea id="phase-theme-input" style="width: 100%; border: none; font-size: 1.4rem; font-weight: bold; outline: none; color: #333; background: transparent; font-family: inherit; resize: none; overflow: hidden; line-height: 1.2;" placeholder="テーマを入力..." oninput="autoResize(this)" onblur="saveToCloud('${phaseThemeKey}', this.value)">${savedTheme}</textarea>
+        `;
+        planner.appendChild(themeSection);
+        autoResize(themeSection.querySelector('#phase-theme-input'));
+
+        document.getElementById('year-display').innerText = `${startDate.getFullYear()}年`;
+        
+        let closestDates = { start: startDate.toDateString(), quarter: null };
+        let minDiffQ = 99;
+        const startIsNew = getMoonAge(startDate) > 25 || getMoonAge(startDate) < 5;
+
+        for (let i = 0; i < 15; i++) {
+            const d = new Date(startDate); d.setDate(startDate.getDate() + i);
+            const age = getMoonAge(d); const targetQ = startIsNew ? 7.4 : 22.1;
+            const diffQ = Math.abs(age - targetQ);
+            if (diffQ < minDiffQ) { minDiffQ = diffQ; closestDates.quarter = d.toDateString(); }
+        }
+
+        document.getElementById('current-info').innerHTML = `サイクル起点: <strong>${startIsNew ? "新月" : "満月"} (${startDate.getMonth()+1}/${startDate.getDate()})</strong>`;
+
+        for (let i = 0; i < 15; i++) {
+            const d = new Date(startDate); d.setDate(startDate.getDate() + i);
+            const dString = d.toDateString(); const age = getMoonAge(d);
+            const isFocus = dString === closestDates.start || dString === closestDates.quarter;
+            const card = document.createElement('div');
+            const dayIdx = d.getDay();
+            const moonPhaseClass = (age <= 0.5 || age >= LUNAR_CYCLE - 0.1) ? 'new-moon-blue' : (age < 14.7 ? 'waxing' : 'waning');
+            card.className = `day-card ${moonPhaseClass} ${dString === today.toDateString() ? 'is-today' : ''} ${isFocus ? 'is-focus' : ''} ${dayIdx === 6 ? 'is-sat' : dayIdx === 0 ? 'is-sun' : ''}`;
+            
+            let eggLabel = "", guideText = "";
+            if (dString === closestDates.start) { eggLabel = startIsNew ? "🌑 新月" : "🌕 満月"; }
+            else if (dString === closestDates.quarter) { eggLabel = startIsNew ? "🌓 上弦" : "🌗 下弦"; }
+
+            const storageKey = `moon_v23_${d.getFullYear()}${d.getMonth() + 1}${d.getDate()}`;
+            const savedShifts = cloudData[storageKey + '_shifts'] || [];
+            const shiftOptions = d.getDay() === 3 ? ["15-18時 スマイル"] : ["9:30-18:15", "9:30-15:30", "12:15-18:15", "12:00-18:00"];
+
+            let shiftHtml = `<div class="shift-selector">` + shiftOptions.map(s => `<span class="shift-tag ${savedShifts.includes(s) ? 'active' : ''}" onclick="toggleShift(this, '${storageKey}', '${s}')">${s}</span>`).join('') + `</div>`;
+
+            const keys = isFocus ? ['_a', '_b'] : ['_a'];
+            const editors = keys.map(k => {
+                const val = cloudData[storageKey + k] || "";
+                return `<div class="edit-column"><div class="display-area" onclick="startEdit(this)">${parseTasks(val)}</div><textarea class="edit-area" data-key="${storageKey + k}" onblur="finishEdit(this)" oninput="autoResize(this)">${val}</textarea></div>`;
+            }).join('');
+
+            card.innerHTML = `<div class="date-head"><div class="date-main"><span class="date-num">${d.getMonth() + 1}/${d.getDate()}</span><span class="day-of-week">(${WEEKDAYS[dayIdx]})</span></div><div class="moon-age">月齢 ${age.toFixed(1)}</div></div><div class="status-line"><div class="egg-status">${eggLabel}</div></div>${shiftHtml}<div class="editor-container">${editors}</div>`;
+            planner.appendChild(card);
+        }
+    }
+
+    window.startEdit = (displayEl) => {
+        const editEl = displayEl.nextElementSibling;
+        displayEl.style.display = 'none';
+        editEl.style.display = 'block';
+        editEl.style.minHeight = displayEl.offsetHeight + "px";
+        autoResize(editEl);
+        editEl.focus();
+    }
+
+    window.finishEdit = async (editEl) => {
+        const displayEl = editEl.previousElementSibling;
+        const key = editEl.getAttribute('data-key');
+        await saveToCloud(key, editEl.value);
+        displayEl.innerHTML = parseTasks(editEl.value);
+        displayEl.style.display = 'block';
+        editEl.style.display = 'none';
+    }
+
+    window.toggleTask = async (cb, lineIdx) => {
+        const displayEl = cb.closest('.display-area');
+        const editEl = displayEl.nextElementSibling;
+        const key = editEl.getAttribute('data-key');
+        const lines = editEl.value.split('\n');
+        lines[lineIdx] = cb.checked ? lines[lineIdx].replace(/^-/, '- [x]') : lines[lineIdx].replace(/-?\s*\[x\]\s*/, '- ');
+        editEl.value = lines.join('\n');
+        await saveToCloud(key, editEl.value);
+    }
+
+    window.toggleShift = async (el, key, val) => {
+        let saved = cloudData[key + '_shifts'] || [];
+        const idx = saved.indexOf(val);
+        if (idx > -1) saved.splice(idx, 1); else saved.push(val);
+        await saveToCloud(key + '_shifts', saved);
+    }
+
+    window.showSavedStatus = () => { document.getElementById('status').innerText = "クラウドに保存しました！"; setTimeout(() => { document.getElementById('status').innerText = ""; }, 800); }
+
+    setupSelectors(); 
+    // 初期表示はFirebaseのデータ待ち(onSnapshotで自動実行)
+</script>
+</body>
+</html>
