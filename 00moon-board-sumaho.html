@@ -34,7 +34,7 @@
 .planner-grid { 
     display: grid; 
     grid-template-columns: repeat(2, 1fr); /* iPhoneで100%の時、2列になります */
-    gap: 12px;
+    gap: 10px;
     max-width: 1500px;
     margin: 0 auto;
     /* 左右に 5px ずつ「絶対に内側に寄せる」隙間を作る */
@@ -47,13 +47,13 @@
     .day-card {
         /* カードがこれ以上細くならないように「最小幅」を固定 */
         /* これにより、拡大しても細長くなりません */
-        min-width: 170px; 
+        min-width: 150px; 
 
     }
     .is-focus {
         /* 2列の時は全幅、縮小して3列以上になれば2個分の幅 */
         grid-column: span 2;
-        min-width: 170px;
+        min-width: 150px;
     }
 }
         
@@ -79,9 +79,12 @@
 }
         /* カードのデザイン */
         .day-card {
+            /* これを追加：パディングやボーダーを「幅の中」に含める設定 */
+    box-sizing: border-box;
             background: white; 
             border-radius: 12px; 
             padding: 12px; 
+            min-width: 170px; /* 175より少しだけ余裕を持たせる */
             min-height: 260px; 
             height: auto; 
             display: flex; 
@@ -333,6 +336,7 @@
 </script>
 </body>
 </html>
+
 
 
 
