@@ -33,7 +33,6 @@
 /* --- 修正：スマホ(iPhone)で見た時は2列を基本にする --- */
 .planner-grid { 
     display: grid; 
-
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
     max-width: 1500px;
@@ -46,11 +45,18 @@
 @media (max-width: 599px) {
     .day-card {
         /* 170pxは指定せず、画面幅に合わせて「伸び縮み」させる */
-        min-width: 165px;
-        width: 100%;
-        box-sizing: border-box;
+        min-width: 160px;
+/* 「今日」ラベルがはみ出さないように調整 */
+    .is-today::after {
+        left: 2px !important; /* 左端ギリギリに寄せてはみ出しを防ぐ */
+        font-size: 0.55rem !important; /* 少し小さく */
+        padding: 1px 4px !important;
+    }
+        
+      /*  width: 100%;
+      /*  box-sizing: border-box;
         /* 中身がはみ出さないための保険 */
-        min-width: 0; 
+      /*  min-width: 0; 
         overflow: hidden;
         /* ...デザイン要素... */
     }
@@ -85,6 +91,14 @@
         grid-template-columns: repeat(6, 1fr); /* ここを6列に戻しました */
     }
 }
+
+    /* --- 4. 「今日」のデザイン自体の微調整 --- */
+.is-today { 
+    outline: 3px solid #7a82f0; 
+    outline-offset: -3px; /* 外側ではなく内側に枠線を引くことで、隣のカードとの干渉を防ぐ */
+    z-index: 10; 
+}
+    
         /* カードのデザイン */
         .day-card {
             /* これを追加：パディングやボーダーを「幅の中」に含める設定 */
@@ -343,6 +357,7 @@
 </script>
 </body>
 </html>
+
 
 
 
