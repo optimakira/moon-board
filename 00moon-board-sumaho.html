@@ -33,10 +33,11 @@
 /* --- 修正：スマホ(iPhone)で見た時は2列を基本にする --- */
 .planner-grid { 
     display: grid; 
-/* 「最低170pxを確保して、入り切らなくなったら自動で改行（1列）してね」という命令 */
-    grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
-    gap: 10px;
+
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
     max-width: 1500px;
+    margin: 0 auto;
     padding: 5px; 
     box-sizing: border-box;
 }
@@ -44,12 +45,13 @@
 /* --- 2. スマホ（幅599px以下）の時だけ、カードの「形」を固定する --- */
 @media (max-width: 599px) {
     .day-card {
-        /* カードがこれ以上細くならないように「最小幅」を固定 */
-        /* これにより、拡大しても細長くなりません */
+        /* 170pxは指定せず、画面幅に合わせて「伸び縮み」させる */
         width: 100%;
         box-sizing: border-box;
+        /* 中身がはみ出さないための保険 */
         min-width: 0; 
-
+        overflow: hidden;
+        /* ...デザイン要素... */
     }
     .is-focus {
         /* 2列の時は全幅、縮小して3列以上になれば2個分の幅 */
@@ -337,6 +339,7 @@
 </script>
 </body>
 </html>
+
 
 
 
