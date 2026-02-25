@@ -46,6 +46,7 @@
 @media (max-width: 599px) {
     .day-card {
         /* 170pxは指定せず、画面幅に合わせて「伸び縮み」させる */
+        min-width: 165px;
         width: 100%;
         box-sizing: border-box;
         /* 中身がはみ出さないための保険 */
@@ -53,6 +54,10 @@
         overflow: hidden;
         /* ...デザイン要素... */
     }
+    /* テーマ欄：ここが重要！強制的に横いっぱいに広げる */
+    .planner-grid > div[style*="grid-column"] {
+        grid-column: 1 / span 2 !important;
+        
     .is-focus {
         /* 2列の時は全幅、縮小して3列以上になれば2個分の幅 */
         grid-column: span 2;
@@ -87,7 +92,6 @@
             background: white; 
             border-radius: 12px; 
             padding: 12px; 
-            min-width: 170px; /* 175より少しだけ余裕を持たせる */
             min-height: 260px; 
             height: auto; 
             display: flex; 
@@ -339,6 +343,7 @@
 </script>
 </body>
 </html>
+
 
 
 
