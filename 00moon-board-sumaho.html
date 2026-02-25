@@ -223,12 +223,14 @@ height: 45px;            /* すべての日でこの高さに固定されます 
         el.style.height = newHeight + 'px';
     };
 
-    window.render = () => {
+   window.render = () => {
         const planner = document.getElementById('planner');
         planner.innerHTML = "";
+        const today = new Date();
         const ageAtBase = getMoonAge(currentBaseDate);
         let startDate = new Date(currentBaseDate);
         
+        // フェーズ判定
         const isWaxingPhase = (ageAtBase >= 28 || ageAtBase < 13.6); 
         if (isWaxingPhase) {
             let offset = ageAtBase < 20 ? ageAtBase : ageAtBase - LUNAR_CYCLE;
@@ -238,50 +240,63 @@ height: 45px;            /* すべての日でこの高さに固定されます 
         }
         startDate.setHours(12, 0, 0, 0);
 
+        const startAge = getMoonAge(startDate);
+        const startIsNew = (startAge < 5 || startAge > 25);
+        const phaseColor = startIsNew ? "#ffd700" : "#4169e1";
+
+        // ヘッダー情報更新
         document.getElementById('year-display').innerText = `${startDate.getFullYear()}年`;
-        
+        document.getElementById('current-info').innerHTML = `サイクル起点: <strong>${startIsNew ? "新月" : "満月"} (${startDate.getMonth()+1}/${startDate.getDate()})</strong>`;
+
+        // テーマセクション
         const phaseThemeKey = `theme_v25_${startDate.getFullYear()}${startDate.getMonth() + 1}${startDate.getDate()}`;
         const savedTheme = cloudData[phaseThemeKey] || "";
-        const startAge = getMoonAge(startDate);
-        const isNewMoonPhase = (startAge < 5 || startAge > 25);
-        const phaseColor = isNewMoonPhase ? "#ffd700" : "#4169e1";
-
         const themeSection = document.createElement('div');
         themeSection.style.cssText = `grid-column: 1 / -1; background: #fff; padding: 20px; border-radius: 16px; margin-bottom: 20px; border-left: 10px solid ${phaseColor}; box-shadow: 0 4px 12px rgba(0,0,0,0.05);`;
         themeSection.innerHTML = `
-            <div style="font-size: 0.75rem; color: ${phaseColor}; font-weight: bold; margin-bottom: 8px;">${isNewMoonPhase ? "🌑 NEW MOON" : "🌕 FULL MOON"} PHASE THEME</div>
+            <div style="font-size: 0.75rem; color: ${phaseColor}; font-weight: bold; margin-bottom: 8px;">${startIsNew ? "🌑 NEW MOON" : "🌕 FULL MOON"} PHASE THEME</div>
             <textarea style="width: 100%; border: none; font-size: 1.4rem; font-weight: bold; outline: none; background: transparent; font-family: inherit; resize: none; overflow: hidden;" placeholder="この2週間のテーマを入力..." oninput="autoResize(this)" onblur="saveToCloud('${phaseThemeKey}', this.value)">${savedTheme}</textarea>
         `;
         planner.appendChild(themeSection);
         autoResize(themeSection.querySelector('textarea'));
 
+        // クオーター（上弦・下弦）の計算
         let closestDates = { start: startDate.toDateString(), quarter: null };
         let minDiffQ = 99;
-        for (let i = 0; i < 15; i++) {
+        const targetQ = startIsNew ? 7.4 : 22.1;
+        
+        for (let i = 0; i < 16; i++) {
             const d = new Date(startDate); d.setDate(startDate.getDate() + i);
-            const age = getMoonAge(d); const targetQ = isNewMoonPhase ? 7.4 : 22.1;
+            const age = getMoonAge(d);
             const diffQ = Math.abs(age - targetQ);
             if (diffQ < minDiffQ) { minDiffQ = diffQ; closestDates.quarter = d.toDateString(); }
         }
 
-        for (let i = 0; i < 15; i++) {
+        // 各日のカード生成
+        for (let i = 0; i < 16; i++) {
             const d = new Date(startDate); d.setDate(startDate.getDate() + i);
-            const dString = d.toDateString(); const age = getMoonAge(d);
+            const dString = d.toDateString(); 
+            const age = getMoonAge(d);
             
             let eggLabel = "";
             let advice = ""; 
-            if (dString === closestDates.start) {
-                if (isNewMoonPhase) { eggLabel = "🌑 新月"; advice = "計画を立てる・はじめよう"; }
+            const isStartFocus = dString === closestDates.start;
+            const isQuarterFocus = dString === closestDates.quarter;
+
+            if (isStartFocus) {
+                if (startIsNew) { eggLabel = "🌑 新月"; advice = "計画を立てる・はじめよう"; }
                 else { eggLabel = "🌕 満月"; advice = "できたことの確認・振り返りをしよう"; }
-            } else if (dString === closestDates.quarter) {
-                if (isNewMoonPhase) { eggLabel = "🌓 上弦"; advice = "増やしたい・吸収したいことに焦点を当てよう"; }
+            } else if (isQuarterFocus) {
+                if (startIsNew) { eggLabel = "🌓 上弦"; advice = "増やしたい・吸収したいことに焦点を当てよう"; }
                 else { eggLabel = "🌗 下弦"; advice = "来期のために準備・掃除して整えよう"; }
             }
 
-            const isFocus = eggLabel !== ""; 
-            const ageClass = (age <= 0.5 || age >= LUNAR_CYCLE - 0.1) ? 'new-moon-blue' : (age < 14.7 ? 'waxing' : 'waning');
+            const isFocus = isStartFocus || isQuarterFocus;
+            const isNewMoonStrict = (age <= 0.5 || age >= LUNAR_CYCLE - 0.1);
+            const moonPhaseClass = isNewMoonStrict ? 'new-moon-blue' : (age < 14.7 ? 'waxing' : 'waning');
+            
             const card = document.createElement('div');
-            card.className = `day-card ${ageClass} ${dString === new Date().toDateString() ? 'is-today' : ''} ${isFocus ? 'is-focus' : ''} ${d.getDay() === 6 ? 'is-sat' : d.getDay() === 0 ? 'is-sun' : ''}`;
+            card.className = `day-card ${moonPhaseClass} ${dString === today.toDateString() ? 'is-today' : ''} ${isFocus ? 'is-focus' : ''} ${d.getDay() === 6 ? 'is-sat' : d.getDay() === 0 ? 'is-sun' : ''}`;
             
             const storageKey = `moon_v23_${d.getFullYear()}${d.getMonth() + 1}${d.getDate()}`;
             const shiftOptions = d.getDay() === 3 ? ["15-18時 スマイル"] : ["9:30-18:15", "9:30-15:30", "12:15-18:15", "12:00-18:00"];
@@ -290,16 +305,12 @@ height: 45px;            /* すべての日でこの高さに固定されます 
 
             const valA = cloudData[storageKey + '_a'] || "";
             const valB = cloudData[storageKey + '_b'] || "";
-// 入力欄の組み立て
-            let editors = `<div class="edit-column"><div class="display-area" onclick="startEdit(this)">${parseTasks(valA)}</div><textarea class="edit-area" data-key="${storageKey + '_a'}" onblur="finishEdit(this)" oninput="autoResize(this)" placeholder=""></textarea></div>`;
-            if (isFocus) editors += `<div class="edit-column"><div class="display-area" onclick="startEdit(this)">${parseTasks(valB)}</div><textarea class="edit-area" data-key="${storageKey + '_b'}" onblur="finishEdit(this)" oninput="autoResize(this)" placeholder=""></textarea></div>`;
+            let editors = `<div class="edit-column"><div class="display-area" onclick="startEdit(this)">${parseTasks(valA)}</div><textarea class="edit-area" data-key="${storageKey + '_a'}" onblur="finishEdit(this)" oninput="autoResize(this)"></textarea></div>`;
+            if (isFocus) editors += `<div class="edit-column"><div class="display-area" onclick="startEdit(this)">${parseTasks(valB)}</div><textarea class="edit-area" data-key="${storageKey + '_b'}" onblur="finishEdit(this)" oninput="autoResize(this)"></textarea></div>`;
 
             card.innerHTML = `
                 <div class="date-head">
-                    <div class="date-main">
-                        <span class="date-num">${d.getMonth() + 1}/${d.getDate()}</span>
-                        <span class="day-of-week">(${["日","月","火","水","木","金","土"][d.getDay()]})</span>
-                    </div>
+                    <div class="date-main"><span class="date-num">${d.getMonth() + 1}/${d.getDate()}</span><span class="day-of-week">(${["日","月","火","水","木","金","土"][d.getDay()]})</span></div>
                     <div class="moon-age">月齢 ${age.toFixed(1)}</div>
                 </div>
                 <div class="status-line">
