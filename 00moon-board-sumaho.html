@@ -34,7 +34,9 @@
 .planner-grid { 
     display: grid; 
     grid-template-columns: repeat(2, 1fr); /* iPhoneで100%の時、2列になります */
-min-width: 0; /* 縮小を邪魔しない設定 */
+    gap: 12px;
+    max-width: 1500px;
+    margin: 0 auto;
 }
 
 /* --- 画面幅が600px以上（少し大きめのスマホやタブレット） --- */
@@ -58,7 +60,17 @@ min-width: 0; /* 縮小を邪魔しない設定 */
     }
 }
         /* カードのデザイン */
-        .day-card { background: white; border-radius: 12px; padding: 12px; min-height: 260px; height: auto; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.05); position: relative; border-top: 6px solid #eee; }
+        .day-card {
+            background: white; 
+            border-radius: 12px; 
+            padding: 12px; 
+            min-height: 260px; 
+            height: auto; 
+            display: flex; 
+            flex-direction: column; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+            position: relative; 
+            border-top: 6px solid #eee; }
 /* --- 注目のアイテム（is-focus）の挙動 --- */
 .is-focus { 
     grid-column: span 2; /* 2列分使う（スマホでは横幅いっぱい、PCでは2/6幅になる） */
@@ -303,6 +315,7 @@ min-width: 0; /* 縮小を邪魔しない設定 */
 </script>
 </body>
 </html>
+
 
 
 
