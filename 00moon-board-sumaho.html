@@ -35,7 +35,8 @@
 display: grid; 
     /* 基本は2列。minmaxを使うことで縮小した時に列が増える余地を作ります */
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 12px;
+    row-gap: 18px; /* ラベルがはみ出すスペースを確保 */
+    column-gap: 12px;
     max-width: 1500px;
     margin: 0 auto;
     padding: 5px; 
@@ -107,7 +108,7 @@ display: grid;
             content: "今日"; 
             position: absolute; 
 /* 画像のように上に飛び出させる設定 */
-            top: -12px !important;  
+            top: -14px !important;  
             left: 10px !important;
             background: #7a82f0; 
             color: white; 
@@ -357,6 +358,7 @@ display: grid;
 </script>
 </body>
 </html>
+
 
 
 
