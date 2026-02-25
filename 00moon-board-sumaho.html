@@ -33,8 +33,8 @@
 /* --- 修正：スマホ(iPhone)で見た時は2列を基本にする --- */
 .planner-grid { 
     display: grid; 
-    grid-template-columns: repeat(2, minmax(150px, 1fr)); /* iPhoneで100%の時、2列になります */
-    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); /* iPhoneで100%の時、2列になります */
+    gap: 12px;
     max-width: 1500px;
     margin: 0 auto;
     /* 左右に 3px ずつ「絶対に内側に寄せる」隙間を作る */
@@ -338,6 +338,7 @@ box-sizing: border-box;
 </script>
 </body>
 </html>
+
 
 
 
