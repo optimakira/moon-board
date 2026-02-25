@@ -74,6 +74,38 @@ body {
         .actions { margin-top: 10px; display: flex; gap: 5px; flex-wrap: wrap; }
         .actions button { font-size: 0.7rem; padding: 4px 8px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; background: white; }
         .tag { font-size: 0.7rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; display: block; }
+
+        /* --- スマホ用の表示設定（ここを追加） --- */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column; /* 横並びを縦並びに変える */
+        padding: 10px;
+    }
+
+    .section {
+        width: 100% !important; /* 幅を画面いっぱいに */
+        min-width: 0 !important;
+        margin-bottom: 20px;
+    }
+
+    .section-wishes {
+        min-width: 0 !important; /* PC用の最小幅設定を解除 */
+    }
+
+    #wishList {
+        grid-template-columns: 1fr; /* たまごカードを1列にする */
+    }
+
+    .egg-btns {
+        flex-wrap: wrap; /* ボタンが入り切らない時に折り返す */
+    }
+
+    .egg-btns button {
+        font-size: 0.9rem; /* 文字を少し小さくして収まりやすく */
+        padding: 12px 5px; /* 押しやすい高さにする */
+    }
+}
+        
     </style>
 </head>
 <body>
@@ -399,3 +431,4 @@ body {
 </body>
 
 </html>
+
