@@ -34,10 +34,10 @@
 .planner-grid { 
     display: grid; 
 /* 「最低170pxを確保して、入り切らなくなったら自動で改行（1列）してね」という命令 */
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+    gap: 10px;
     max-width: 1500px;
-    padding: 10px; 
+    padding: 5px; 
     box-sizing: border-box;
 }
         
@@ -48,13 +48,13 @@
         /* これにより、拡大しても細長くなりません */
         width: 100%;
         box-sizing: border-box;
-        min-width: 160px; 
+        min-width: 0; 
 
     }
     .is-focus {
         /* 2列の時は全幅、縮小して3列以上になれば2個分の幅 */
         grid-column: span 2;
-        min-width: 160px;
+        min-width: 0px;
     }
 }
         
@@ -337,6 +337,7 @@
 </script>
 </body>
 </html>
+
 
 
 
