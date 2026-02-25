@@ -33,7 +33,7 @@
 /* --- 修正：スマホ(iPhone)で見た時は2列を基本にする --- */
 .planner-grid { 
     display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); /*repeat(2, 1fr); /* iPhoneで100%の時、2列になります */
+    grid-template-columns: repeat(2, 1fr); /* iPhoneで100%の時、2列になります */
     gap: 12px;
     max-width: 1500px;
     margin: 0 auto;
@@ -64,8 +64,6 @@
             background: white; 
             border-radius: 12px; 
             padding: 12px; 
-            /* 【ここがポイント】iPhone 2列時のサイズ（約175px）を最小幅にする */
-            min-width: 175px;
             min-height: 260px; 
             height: auto; 
             display: flex; 
@@ -317,9 +315,5 @@
 </script>
 </body>
 </html>
-
-
-
-
 
 
