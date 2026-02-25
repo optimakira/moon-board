@@ -140,7 +140,7 @@ display: grid;
         /* 【重要】シフトセレクターの修正点 */
         .shift-selector { 
             background: #f8f9fa; padding: 5px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #eee; 
-            display: flex; flex-wrap: wrap; gap: 4px; min-height: 45px; position: relative; z-index: 100;
+            display: flex; flex-wrap: wrap; gap: 4px; min-height: auto; /*←いれた*/ position: relative; z-index: 100;
         }
         .shift-tag { 
             font-size: 0.6rem; color: #555; background: #fff; border: 1px solid #ddd; padding: 1px 4px; 
@@ -148,10 +148,24 @@ display: grid;
         }
         .shift-tag.active { background: #7a82f0; color: white; border-color: #7a82f0; }
 
-        .editor-container { display: flex; gap: 8px; flex-grow: 1; height: auto; min-height: 130px; position: relative; z-index: 10; } 
-        .edit-column { flex: 1; position: relative; display: flex; flex-direction: column; }
-        .display-area { flex-grow: 1; font-size: 0.8rem; line-height: 1.5; padding: 6px; border-radius: 6px; background: #fafafa; border: 1px solid #eee; cursor: text; box-sizing: border-box; width: 100%; min-height: 130px; }
-        .edit-area { width: 100%; outline: none; font-size: 0.8rem; line-height: 1.5; padding: 6px; border-radius: 6px; background: #fff; border: 1px solid #7a82f0; white-space: pre-wrap; display: none; resize: none; box-sizing: border-box; }
+        .editor-container {
+            display: flex; gap: 8px;
+            flex-grow: 1; height: auto; min-height: 130px; position: relative; z-index: 10; } 
+        
+        .edit-column { flex: 1; position: relative; display: flex; flex-direction: column; height: auto; }
+        
+        .display-area {
+            flex-grow: 1; font-size: 0.8rem; 
+            line-height: 1.5; 
+            padding: 6px; 
+            border-radius: 6px; 
+            background: #fafafa; border: 1px solid #eee; cursor: text; box-sizing: border-box; width: 100%; min-height: 130px; }
+        
+        .edit-area { 
+            width: 100%; outline: none; font-size: 0.8rem; 
+            line-height: 1.5; padding: 6px; border-radius: 6px; 
+            background: #fff; border: 1px solid #7a82f0; white-space: pre-wrap; overflow: hidden;
+            display: none; resize: none; box-sizing: border-box; }
         
         .task-item { display: flex; align-items: flex-start; gap: 5px; }
         .task-done { text-decoration: line-through; color: #bbb; }
@@ -328,13 +342,18 @@ display: grid;
         el.classList.toggle('active');
     }
 
-    window.startEdit = (displayEl) => {
-        const editEl = displayEl.nextElementSibling;
-        displayEl.style.display = 'none';
-        editEl.style.display = 'block';
-        autoResize(editEl);
-        editEl.focus();
-    }
+window.startEdit = (displayEl) => {
+    const editEl = displayEl.nextElementSibling;
+    // 表示エリアの「現在の高さ」をそのまま入力エリアに引き継ぐ
+    const currentHeight = displayEl.offsetHeight; 
+    
+    displayEl.style.display = 'none';
+    editEl.style.display = 'block';
+    
+    editEl.style.height = currentHeight + 'px'; // 高さを同期
+    autoResize(editEl); // 内容に合わせてさらに伸ばす
+    editEl.focus();
+}
 
     window.finishEdit = async (editEl) => {
         const displayEl = editEl.previousElementSibling;
@@ -358,6 +377,7 @@ display: grid;
 </script>
 </body>
 </html>
+
 
 
 
