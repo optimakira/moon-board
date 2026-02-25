@@ -37,19 +37,23 @@
     gap: 12px;
     max-width: 1500px;
     margin: 0 auto;
+    /* 左右に 10px ずつ「絶対に内側に寄せる」隙間を作る */
+    padding: 0 10px; 
+    box-sizing: border-box; /* パディングを幅に含める設定 */
 }
+        
 /* --- 2. スマホ（幅599px以下）の時だけ、カードの「形」を固定する --- */
 @media (max-width: 599px) {
     .day-card {
         /* カードがこれ以上細くならないように「最小幅」を固定 */
         /* これにより、拡大しても細長くなりません */
-        min-width: 150px; 
+        min-width: 160px; 
 
     }
     .is-focus {
         /* 2列の時は全幅、縮小して3列以上になれば2個分の幅 */
         grid-column: span 2;
-        min-width: 150px;
+        min-width: 160px;
     }
 }
         
@@ -329,6 +333,7 @@
 </script>
 </body>
 </html>
+
 
 
 
