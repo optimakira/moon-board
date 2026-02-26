@@ -6,25 +6,24 @@
     <title>2週間記録ポモドーロ</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+      /* 基本的なレイアウト設定 */
       body {
         margin: 0;
-        padding-top: 30px; /* ★これを追加すると、画面の一番上に必ず30pxの隙間ができます */
+        padding-top: 30px; /* 画面上部の余白 */
         font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
         display: flex;
         flex-direction: column;
         align-items: center;
         min-height: 100vh;
-        transition: background-color 1s ease;
+        transition: background-color 1s ease; /* 背景色変更を滑らかに */
         color: #555;
         overflow-y: auto;
       }
-      .work-bg {
-        background-color: #ccffd7;
-      }
-      .break-bg {
-        background-color: #fff9c4;
-      }
+      /* 集中時と休憩時の背景色定義 */
+      .work-bg { background-color: #ccffd7; } /* 緑系 */
+      .break-bg { background-color: #fff9c4; } /* 黄系 */
 
+      /* タイマー表示エリアのスタイル */
       #timer-section {
         padding: 20px 20px 10px 20px;
         display: flex;
@@ -32,18 +31,21 @@
         align-items: center;
       }
 
+      /* ステータス（集中/休憩）の文字スタイル */
       #status {
         font-size: 1.5rem;
         font-weight: bold;
         margin-bottom: 5px;
       }
+      /* タイマーの数字：画面幅に合わせてサイズが変わるように設定 */
       #timer {
         font-size: clamp(5rem, 20vw, 10rem);
         font-weight: 200;
-        font-variant-numeric: tabular-nums;
+        font-variant-numeric: tabular-nums; /* 数字の幅を一定にしてガタつきを防ぐ */
         line-height: 0.9;
         margin: 20px 0;
       }
+      /* ボタン配置の設定 */
       .btn-group {
         margin-top: 5px;
         display: flex;
@@ -60,36 +62,37 @@
         background: rgba(255, 255, 255, 0.4);
         color: #555;
       }
+      /* 記録ボタンにホバーした時の色 */
       #log-btn:hover {
         background: #55b29c;
         color: white;
         border-color: #55b29c;
       }
 
+      /* グラフを囲むコンテナの共通設定 */
       #chart-container,
       #archive-chart-box {
         width: 90%;
         max-width: 800px;
-        height: 320px; /* ★ここで高さをしっかり指定します（例：300px） */
+        height: 320px;
         margin: 20px auto;
         background: rgba(255, 255, 255, 0.7);
-        /* ★ここを調整します */
-
         border-radius: 20px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        box-sizing: border-box; /* ★これを入れるとpaddingが幅に含まれるようになります */
+        box-sizing: border-box;
       }
 
-      /* ★メインの「二週間の記録」専用の余白 */
+      /* 直近2週間のグラフ用のパディング */
       #chart-container {
-        padding: 20px 20px 50px 20px; /* 下を50pxにして日付をゆったりさせる */
+        padding: 20px 20px 50px 20px;
       }
 
-      /* ★下の「過去の記録」専用の余白 */
+      /* 過去ログのグラフ用のパディング */
       #archive-chart-box {
-        padding: 20px 20px 20px 20px; /* 全体に均等に余白をとる */
+        padding: 20px 20px 20px 20px;
       }
 
+      /* 月/年 切り替えボタンのスタイル */
       .mode-btn {
         border: none;
         background: transparent;
@@ -98,6 +101,7 @@
         cursor: pointer;
         color: #777;
       }
+      /* 選択中のボタンを強調 */
       .mode-btn.active {
         font-weight: bold;
         background: white !important;
@@ -105,6 +109,7 @@
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       }
 
+      /* 過去ログ操作エリアのレイアウト */
       .archive-controls {
         display: flex;
         justify-content: center;
@@ -124,6 +129,7 @@
         background: white;
         font-size: 0.9rem;
       }
+      /* 期間移動の矢印ボタン */
       .arrow-btn {
         border: none;
         background: #ddd;
@@ -154,47 +160,18 @@
     </div>
 
     <div id="chart-container">
-      <h2
-        style="
-          text-align: center;
-          font-size: 0.9rem;
-          color: #777;
-          margin-top: 0;
-        "
-      >
-        完了セット数
-      </h2>
+      <h2 style="text-align: center; font-size: 0.9rem; color: #777; margin-top: 0;">完了セット数</h2>
       <canvas id="mainChart"></canvas>
     </div>
 
-    <hr
-      style="width: 80%; border: 0; border-top: 1px solid #ddd; margin: 20px 0"
-    />
+    <hr style="width: 80%; border: 0; border-top: 1px solid #ddd; margin: 20px 0" />
 
-    <div
-      id="archive-section"
-      style="width: 90%; max-width: 800px; margin-bottom: 50px"
-    >
+    <div id="archive-section" style="width: 90%; max-width: 800px; margin-bottom: 50px">
       <h2 style="text-align: center; font-size: 1.2rem">過去の記録</h2>
       <div style="display: flex; justify-content: center; margin-bottom: 20px">
-        <div
-          style="
-            display: flex;
-            background: rgba(0, 0, 0, 0.05);
-            padding: 4px;
-            border-radius: 10px;
-          "
-        >
-          <button
-            id="btn-month"
-            class="mode-btn active"
-            onclick="changeMode('month')"
-          >
-            月
-          </button>
-          <button id="btn-year" class="mode-btn" onclick="changeMode('year')">
-            年
-          </button>
+        <div style="display: flex; background: rgba(0, 0, 0, 0.05); padding: 4px; border-radius: 10px;">
+          <button id="btn-month" class="mode-btn active" onclick="changeMode('month')">月</button>
+          <button id="btn-year" class="mode-btn" onclick="changeMode('year')">年</button>
         </div>
       </div>
       <div class="archive-controls">
@@ -209,14 +186,11 @@
     </div>
 
     <script type="module">
+      /* Firebase関連ライブラリのインポート */
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-      import {
-        getFirestore,
-        doc,
-        setDoc,
-        onSnapshot,
-      } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+      import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+      /* Firebaseの設定情報（プロジェクト固有） */
       const firebaseConfig = {
         apiKey: "AIzaSyBEE451bCNLV-Ty337LyZryFlZqqiN4mxo",
         authDomain: "moonboard-27ebf.firebaseapp.com",
@@ -225,30 +199,35 @@
         messagingSenderId: "437383444283",
         appId: "1:437383444283:web:f2fab00c5e190b2ca9291e",
       };
-      const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
-      const docRef = doc(db, "data", "pomo-v1");
+      
+      const app = initializeApp(firebaseConfig); // Firebase初期化
+      const db = getFirestore(app); // データベース(Firestore)取得
+      const docRef = doc(db, "data", "pomo-v1"); // 保存先のドキュメントを指定
 
-      let dailyData = {},
-        mainChart,
-        archiveChart,
-        archiveMode = "month";
-      let lastMode = "";
+      /* グローバル変数 */
+      let dailyData = {}, // 全記録データを保持するオブジェクト
+        mainChart,        // メイングラフのインスタンス
+        archiveChart,     // 過去ロググラフのインスタンス
+        archiveMode = "month"; // 表示モード（月単位/年単位）
+      let lastMode = "";  // 直前のモード（集中/休憩）を記録して音のトリガーにする
       const yearSel = document.getElementById("select-year");
       const monthSel = document.getElementById("select-month");
 
-      // --- 音の準備（関数の外に出してどこからでも呼べるようにしました） ---
+      /* --- 音声通知エンジンの設定 --- */
       let audioCtx = null;
       function initAudio() {
         if (!audioCtx) {
           audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
       }
+      // ブラウザの制限回避のため、最初のクリック時にオーディオを有効化
       document.body.addEventListener("click", initAudio, { once: true });
 
       function playSound(isWork) {
         if (!audioCtx) return;
         if (audioCtx.state === "suspended") audioCtx.resume();
+        
+        // オシレーター（発振器）で電子音を生成する関数
         const playNote = (freq, type, volume, duration) => {
           const osc = audioCtx.createOscillator();
           const g = audioCtx.createGain();
@@ -256,135 +235,111 @@
           osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
           g.gain.setValueAtTime(0, audioCtx.currentTime);
           g.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.05);
-          g.gain.exponentialRampToValueAtTime(
-            0.001,
-            audioCtx.currentTime + duration,
-          );
+          g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
           osc.connect(g);
           g.connect(audioCtx.destination);
           osc.start();
           osc.stop(audioCtx.currentTime + duration);
         };
+
         if (isWork) {
-          playNote(440, "sine", 0.1, 1.5); // 集中開始
+          playNote(440, "sine", 0.1, 1.5); // 集中開始音
         } else {
-          playNote(880, "sine", 0.1, 0.5); // 休憩開始
+          playNote(880, "sine", 0.1, 0.5); // 休憩開始音（2音構成）
           setTimeout(() => playNote(1100, "sine", 0.08, 1.0), 150);
         }
       }
 
+      /* グラフの共通オプション設定関数 */
       const getOptions = (isMain) => ({
         responsive: true,
-        maintainAspectRatio: false, // ★これを追加（枠に合わせて伸び縮みできるようになります）
-        // ★ここから「layout」を追加
+        maintainAspectRatio: false, // コンテナの高さに合わせる
         layout: {
-          padding: {
-            left: 5,
-            right: 15, // 右側に少し余裕を持たせて日付のはみ出しを防ぐ
-            bottom: 5,
-          },
+          padding: { left: 5, right: 15, bottom: 5 },
         },
         scales: {
           x: {
             grid: { display: true, color: "rgba(0,0,0,0.1)" },
             ticks: {
               font: { size: 10 },
-              // ★ここを追加：ラベルが重なりそうな時に自動で非表示にする
-              autoSkip: true,
-              maxRotation: 90, // ★最大90度まで回転を許可
-              minRotation: 45, // ★最初から45度傾けてスペースを作る
+              autoSkip: true, // ラベルが重なるときに間引く
+              maxRotation: 90, 
+              minRotation: 45, // 見やすくするために最初から傾ける
             },
           },
-
           y: {
             beginAtZero: true,
             grid: { color: "rgba(0,0,0,0.1)" },
             border: { display: true, color: "#888" },
-            ticks: { stepSize: 1 },
+            ticks: { stepSize: 1 }, // 完了数は整数なので1刻みに
           },
         },
-        plugins: { legend: { display: !isMain } },
+        plugins: { legend: { display: !isMain } }, // メイングラフは凡例を非表示
       });
 
+      /* ページ起動時の初期化処理 */
       function init() {
         const now = new Date();
+        // セレクトボックスに年前後の選択肢を追加
         for (let y = now.getFullYear() - 2; y <= now.getFullYear() + 1; y++)
           yearSel.add(new Option(y + "年", y));
         for (let m = 0; m < 12; m++) monthSel.add(new Option(m + 1 + "月", m));
         yearSel.value = now.getFullYear();
         monthSel.value = now.getMonth();
 
+        // メイングラフ作成
         mainChart = new Chart(document.getElementById("mainChart"), {
           type: "bar",
-          data: {
-            labels: [],
-            datasets: [
-              { data: [], backgroundColor: "#55b29c", borderRadius: 5 },
-            ],
-          },
+          data: { labels: [], datasets: [{ data: [], backgroundColor: "#55b29c", borderRadius: 5 }] },
           options: getOptions(true),
         });
+        // 過去ロググラフ作成
         archiveChart = new Chart(document.getElementById("archiveChart"), {
           type: "bar",
-          data: {
-            labels: [],
-            datasets: [
-              {
-                label: "完了数",
-                data: [],
-                backgroundColor: "#b2e2f2",
-
-                borderRadius: 3,
-              },
-            ],
-          },
+          data: { labels: [], datasets: [{ label: "完了数", data: [], backgroundColor: "#b2e2f2", borderRadius: 3 }] },
           options: getOptions(false),
         });
 
+        // Firebaseからリアルタイムにデータを取得して更新
         onSnapshot(docRef, (snap) => {
           if (snap.exists()) {
             dailyData = snap.data();
             updateAllCharts();
           }
         });
+        
+        // セレクトボックス変更時にグラフ更新
         yearSel.onchange = updateArchiveChart;
         monthSel.onchange = updateArchiveChart;
       }
 
+      /* 月表示/年表示の切り替え */
       window.changeMode = (mode) => {
         archiveMode = mode;
-        document
-          .getElementById("btn-month")
-          .classList.toggle("active", mode === "month");
-        document
-          .getElementById("btn-year")
-          .classList.toggle("active", mode === "year");
-        monthSel.style.display = mode === "year" ? "none" : "inline-block";
+        document.getElementById("btn-month").classList.toggle("active", mode === "month");
+        document.getElementById("btn-year").classList.toggle("active", mode === "year");
+        monthSel.style.display = mode === "year" ? "none" : "inline-block"; // 年モードなら月選択を隠す
         updateArchiveChart();
       };
 
+      /* 期間の前後移動ボタンの処理 */
       window.movePeriod = (offset) => {
-        let m = parseInt(monthSel.value),
-          y = parseInt(yearSel.value);
-
+        let m = parseInt(monthSel.value), y = parseInt(yearSel.value);
         if (archiveMode === "year") {
           const nextYear = y + offset;
-          // ★修正ポイント：移動先の年がセレクトボックスにない場合、新しく作る
+          // 選択肢にない年へ移動しようとした場合に自動追加
           let exists = false;
           for (let i = 0; i < yearSel.options.length; i++) {
-            if (parseInt(yearSel.options[i].value) === nextYear) {
-              exists = true;
-              break;
-            }
+            if (parseInt(yearSel.options[i].value) === nextYear) { exists = true; break; }
           }
           if (!exists) {
-            // 昇順に並ぶように追加（簡易版：一番上か下に追加）
             const newOpt = new Option(nextYear + "年", nextYear);
             if (offset > 0) yearSel.add(newOpt);
             else yearSel.add(newOpt, yearSel.options[0]);
           }
           yearSel.value = nextYear;
         } else {
+          // 月単位の移動処理
           let d = new Date(y, m + offset, 1);
           yearSel.value = d.getFullYear();
           monthSel.value = d.getMonth();
@@ -392,9 +347,10 @@
         updateArchiveChart();
       };
 
+      /* グラフデータの更新処理（全体） */
       function updateAllCharts() {
-        const mLabs = [],
-          mData = [];
+        const mLabs = [], mData = [];
+        // 直近14日分のデータを収集
         for (let i = 13; i >= 0; i--) {
           const d = new Date();
           d.setDate(d.getDate() - i);
@@ -408,12 +364,13 @@
         updateArchiveChart();
       }
 
+      /* アーカイブグラフの個別更新 */
       function updateArchiveChart() {
-        const y = parseInt(yearSel.value),
-          m = parseInt(monthSel.value);
-        const labels = [],
-          data = [];
+        const y = parseInt(yearSel.value), m = parseInt(monthSel.value);
+        const labels = [], data = [];
+        
         if (archiveMode === "month") {
+          // 月表示：その月の日数分ループ
           const last = new Date(y, m + 1, 0).getDate();
           for (let d = 1; d <= last; d++) {
             labels.push(d);
@@ -421,11 +378,11 @@
           }
           archiveChart.data.datasets[0].label = `${m + 1}月の記録`;
         } else {
+          // 年表示：12ヶ月分ループ
           for (let mo = 1; mo <= 12; mo++) {
             labels.push(`${mo}月`);
             let total = 0;
-            for (let d = 1; d <= 31; d++)
-              total += dailyData[`${y}/${mo}/${d}`] || 0;
+            for (let d = 1; d <= 31; d++) total += dailyData[`${y}/${mo}/${d}`] || 0;
             data.push(total);
           }
           archiveChart.data.datasets[0].label = `${y}年の合計`;
@@ -435,46 +392,48 @@
         archiveChart.update();
       }
 
-      // タイマー
+      /* メインタイマーロジック（1秒ごとに実行） */
       setInterval(() => {
         const now = new Date();
-        const cycle =
-          (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) %
-          (25 * 60);
+        // 現在時刻から「25分サイクル」のどこにいるかを算出
+        // 0〜19:59までは集中、20:00〜24:59までは休憩
+        const cycle = (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) % (25 * 60);
         const isWork = cycle < 20 * 60;
 
         const currentMode = isWork ? "work" : "break";
         if (lastMode !== "" && lastMode !== currentMode) {
-          playSound(isWork); // モード切替時に音を鳴らす
+          playSound(isWork); // モードが切り替わった瞬間だけ音を鳴らす
         }
         lastMode = currentMode;
 
+        // 背景色とステータス文字の更新
         document.body.className = isWork ? "work-bg" : "break-bg";
-        document.getElementById("status").textContent = isWork
-          ? "✎ 集中タイム"
-          : "🐤 ひとやすみ";
+        document.getElementById("status").textContent = isWork ? "✎ 集中タイム" : "🐤 ひとやすみ";
+        
+        // カウントダウン表示の計算
         let rem = isWork ? 20 * 60 - cycle : 25 * 60 - cycle;
-        document.getElementById("timer").textContent = `${Math.floor(rem / 60)
-          .toString()
-          .padStart(2, "0")}:${(rem % 60).toString().padStart(2, "0")}`;
+        document.getElementById("timer").textContent = `${Math.floor(rem / 60).toString().padStart(2, "0")}:${(rem % 60).toString().padStart(2, "0")}`;
       }, 1000);
 
+      /* ボタン操作：完了数を増やす */
       document.getElementById("log-btn").onclick = async () => {
         const d = new Date();
         const k = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
         dailyData[k] = (dailyData[k] || 0) + 1;
-        await setDoc(docRef, dailyData);
+        await setDoc(docRef, dailyData); // Firebaseへ保存
       };
+      
+      /* ボタン操作：完了数を減らす（ミス修正用） */
       document.getElementById("minus-btn").onclick = async () => {
         const d = new Date();
         const k = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
         if (dailyData[k] > 0) {
           dailyData[k] -= 1;
-          await setDoc(docRef, dailyData);
+          await setDoc(docRef, dailyData); // Firebaseへ保存
         }
       };
 
-      init();
+      init(); // 全体の初期化実行
     </script>
   </body>
 </html>
