@@ -330,13 +330,22 @@ height: 45px;            /* すべての日でこの高さに固定されます 
         }
     }
 
-    window.toggleShift = async (el, key, val) => {
-        let saved = cloudData[key + '_shifts'] || [];
-        const idx = saved.indexOf(val);
-        if (idx > -1) saved.splice(idx, 1); else saved.push(val);
-        await saveToCloud(key + '_shifts', saved);
-        el.classList.toggle('active');
-    }
+window.toggleShift = async (el, key, val) => {
+    // 1. 個別のボタンの色をその場ですぐ変える（スクロールは動かない）
+    el.classList.toggle('active');
+// 2. データの準備
+    let saved = cloudData[key + '_shifts'] || [];
+    const idx = saved.indexOf(val);
+    if (idx > -1) saved.splice(idx, 1); else saved.push(val);
+// 3. 【重要】「今いじってるから画面を勝手に描き直さないで！」とガードを立てる
+    isEditing = true; 
+
+    // 4. 裏で保存
+    await saveToCloud(key + '_shifts', saved);
+
+    // 5. 保存が終わったら少ししてガードを外す
+    setTimeout(() => { isEditing = false; }, 1000);
+}
 
    window.startEdit = (displayEl) => {
     isEditing = true; // 編集フラグを立てる
@@ -389,5 +398,6 @@ window.finishEdit = async (editEl) => {
 </script>
 </body>
 </html>
+
 
 
