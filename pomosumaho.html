@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="ja">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>2週間記録ポモドーロ</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
       body {
         margin: 0;
-        padding-top: 30px; /* ★これを追加すると、画面の一番上に必ず30pxの隙間ができます */
+	padding-top: 30px; /* ★これを追加すると、画面の一番上に必ず30pxの隙間ができます */
         font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
         display: flex;
         flex-direction: column;
@@ -26,7 +26,7 @@
       }
 
       #timer-section {
-        padding: 100px 20px 10px 20px;
+        padding: 20px 20px 10px 20px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -70,17 +70,17 @@
       #archive-chart-box {
         width: 90%;
         max-width: 800px;
-        height: 320px; /* ★ここで高さをしっかり指定します（例：300px） */
-        margin: 20px auto;
+height: 320px; /* ★ここで高さをしっかり指定します（例：300px） */
+margin: 20px auto;
         background: rgba(255, 255, 255, 0.7);
-        /* ★ここを調整します */
+/* ★ここを調整します */
 
         border-radius: 20px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        box-sizing: border-box; /* ★これを入れるとpaddingが幅に含まれるようになります */
+box-sizing: border-box; /* ★これを入れるとpaddingが幅に含まれるようになります */
       }
 
-      /* ★メインの「二週間の記録」専用の余白 */
+/* ★メインの「二週間の記録」専用の余白 */
       #chart-container {
         padding: 20px 20px 50px 20px; /* 下を50pxにして日付をゆったりさせる */
       }
@@ -275,28 +275,30 @@
 
       const getOptions = (isMain) => ({
         responsive: true,
-        maintainAspectRatio: false, // ★これを追加（枠に合わせて伸び縮みできるようになります）
-        // ★ここから「layout」を追加
+maintainAspectRatio: false, // ★これを追加（枠に合わせて伸び縮みできるようになります）
+    // ★ここから「layout」を追加
         layout: {
           padding: {
             left: 5,
             right: 15, // 右側に少し余裕を持たせて日付のはみ出しを防ぐ
-            bottom: 5,
-          },
+            bottom: 5
+          }
         },
-        scales: {
+    scales: {
           x: {
             grid: { display: true, color: "rgba(0,0,0,0.1)" },
-            ticks: {
-              font: { size: 10 },
+            ticks: { 
+font: { size: 10 },
               // ★ここを追加：ラベルが重なりそうな時に自動で非表示にする
               autoSkip: true,
               maxRotation: 0, // 文字を斜めにしない（読みやすさ重視）
-              minRotation: 0,
-            },
-          },
+              minRotation: 0
 
-          y: {
+ },
+          },
+ 
+
+         y: {
             beginAtZero: true,
             grid: { color: "rgba(0,0,0,0.1)" },
             border: { display: true, color: "#888" },
