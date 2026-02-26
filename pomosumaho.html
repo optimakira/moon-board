@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>2週間記録ポモドーロ</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        margin: 0;
+        font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        transition: background-color 1s ease;
+        color: #555;
+        overflow-y: auto;
+      }
+      .work-bg {
+        background-color: #ccffd7;
+      }
+      .break-bg {
+        background-color: #fff9c4;
+      }
+
+      #timer-section {
+        padding: 20px 20px 10px 20px; /* 上下のパディングを削って上に詰める */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      #status {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      #timer {
+        font-size: clamp(5rem, 20vw, 10rem);
+        font-weight: 200;
+        font-variant-numeric: tabular-nums;
+        line-height: 0.9; /* ★行の高さを1以下にして上下の余白を強制的に削る */
+        margin: 20px 0; /* ★マイナスマージンでさらに上下の隙間を詰める */
+      }
+      .btn-group {
+        margin-top: 5px; /* ★タイマーとの距離を最小限に */
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      button {
+        padding: 12px 25px;
+        font-size: 1rem;
+        cursor: pointer;
+        border: 2px solid #555;
+        border-radius: 50px;
+        background: rgba(255, 255, 255, 0.4);
+        color: #555;
+      }
+      #log-btn:hover {
+        background: #55b29c;
+        color: white;
+        border-color: #55b29c;
+      }
+
+      #chart-container,
+      #archive-chart-box {
+        width: 90%;
+        max-width: 800px;
+        margin: 20px 0;
+        background: rgba(255, 255, 255, 0.7);
+        padding: 20px;
+        border-radius: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      }
+
+      .mode-btn {
+        border: none;
+        background: transparent;
+        padding: 5px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        color: #777;
+      }
+      .mode-btn.active {
+        font-weight: bold;
+        background: white !important;
+        color: #333;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      /* ★ 修正：操作パネルのレイアウトを整える */
+      .archive-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center; /* 上下中央揃え */
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+      .select-group {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+      }
+      select {
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        background: white;
+        font-size: 0.9rem;
+      }
+      .arrow-btn {
+        border: none;
+        background: #ddd;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+      }
+    </style>
+  </head>
+
+  <body class="work-bg">
+    <div id="timer-section">
+      <div id="status">---</div>
+      <div id="timer">00:00</div>
+      <div class="btn-group">
+        <button id="minus-btn">一つ消す ↩</button>
+        <button id="log-btn">✨ 集中できた！</button>
+      </div>
+    </div>
+
+    <div id="chart-container">
+      <h2
+        style="
+          text-align: center;
+          font-size: 0.9rem;
+          color: #777;
+          margin-top: 0;
+        "
+      >
+        完了セット数
+      </h2>
+      <canvas id="mainChart"></canvas>
+    </div>
+
+    <hr
+      style="width: 80%; border: 0; border-top: 1px solid #ddd; margin: 20px 0"
+    />
+
+    <div
+      id="archive-section"
+      style="width: 90%; max-width: 800px; margin-bottom: 50px"
+    >
+      <h2 style="text-align: center; font-size: 1.2rem">過去の記録</h2>
+
+      <div style="display: flex; justify-content: center; margin-bottom: 20px">
+        <div
+          style="
+            display: flex;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 4px;
+            border-radius: 10px;
+          "
+        >
+          <button
+            id="btn-month"
+            class="mode-btn active"
+            onclick="changeMode('month')"
+          >
+            月
+          </button>
+          <button id="btn-year" class="mode-btn" onclick="changeMode('year')">
+            年
+          </button>
+        </div>
+      </div>
+
+      <div class="archive-controls">
+        <button class="arrow-btn" onclick="movePeriod(-1)">＜</button>
+        <div class="select-group">
+          <select id="select-year"></select>
+          <select id="select-month"></select>
+        </div>
+        <button class="arrow-btn" onclick="movePeriod(1)">＞</button>
+      </div>
+
+      <div id="archive-chart-box"><canvas id="archiveChart"></canvas></div>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        onSnapshot,
+      } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBEE451bCNLV-Ty337LyZryFlZqqiN4mxo",
+        authDomain: "moonboard-27ebf.firebaseapp.com",
+        projectId: "moonboard-27ebf",
+        storageBucket: "moonboard-27ebf.firebasestorage.app",
+        messagingSenderId: "437383444283",
+        appId: "1:437383444283:web:f2fab00c5e190b2ca9291e",
+      };
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const docRef = doc(db, "data", "pomo-v1");
+
+      let dailyData = {},
+        mainChart,
+        archiveChart,
+        archiveMode = "month";
+      const yearSel = document.getElementById("select-year");
+      const monthSel = document.getElementById("select-month");
+
+      // グラフオプション作成（日付の区切り線を表示）
+      const getOptions = (isMain) => ({
+        responsive: true,
+        scales: {
+          x: {
+            grid: {
+              display: true, // ★ 日付と日付の間の線を表示
+              color: "rgba(0,0,0,0.1)",
+            },
+            ticks: { font: { size: 10 } },
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: "rgba(0,0,0,0.1)" },
+            border: { display: true, color: "#888" },
+            ticks: { stepSize: 1 },
+          },
+        },
+        plugins: { legend: { display: !isMain } },
+      });
+
+      function init() {
+        const now = new Date();
+        for (let y = now.getFullYear() - 2; y <= now.getFullYear() + 1; y++)
+          yearSel.add(new Option(y + "年", y));
+        for (let m = 0; m < 12; m++) monthSel.add(new Option(m + 1 + "月", m));
+        yearSel.value = now.getFullYear();
+        monthSel.value = now.getMonth();
+
+        mainChart = new Chart(document.getElementById("mainChart"), {
+          type: "bar",
+          data: {
+            labels: [],
+            datasets: [
+              { data: [], backgroundColor: "#55b29c", borderRadius: 5 },
+            ],
+          },
+          options: getOptions(true),
+        });
+        archiveChart = new Chart(document.getElementById("archiveChart"), {
+          type: "bar",
+          data: {
+            labels: [],
+            datasets: [
+              {
+                label: "完了数",
+                data: [],
+                backgroundColor: "#aaaaaa",
+                borderRadius: 3,
+              },
+            ],
+          },
+          options: getOptions(false),
+        });
+
+        onSnapshot(docRef, (snap) => {
+          if (snap.exists()) {
+            dailyData = snap.data();
+            updateAllCharts();
+          }
+        });
+        yearSel.onchange = updateArchiveChart;
+        monthSel.onchange = updateArchiveChart;
+      }
+
+      window.changeMode = (mode) => {
+        archiveMode = mode;
+        document
+          .getElementById("btn-month")
+          .classList.toggle("active", mode === "month");
+        document
+          .getElementById("btn-year")
+          .classList.toggle("active", mode === "year");
+        monthSel.style.display = mode === "year" ? "none" : "inline-block";
+        updateArchiveChart();
+      };
+
+      window.movePeriod = (offset) => {
+        let m = parseInt(monthSel.value),
+          y = parseInt(yearSel.value);
+        if (archiveMode === "year") {
+          yearSel.value = y + offset;
+        } else {
+          let d = new Date(y, m + offset, 1);
+          yearSel.value = d.getFullYear();
+          monthSel.value = d.getMonth();
+        }
+        updateArchiveChart();
+      };
+
+      function updateAllCharts() {
+        const mLabs = [],
+          mData = [];
+        for (let i = 13; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const k = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+          mLabs.push(`${d.getMonth() + 1}/${d.getDate()}`);
+          mData.push(dailyData[k] || 0);
+        }
+        mainChart.data.labels = mLabs;
+        mainChart.data.datasets[0].data = mData;
+        mainChart.update();
+        updateArchiveChart();
+      }
+
+      function updateArchiveChart() {
+        const y = parseInt(yearSel.value),
+          m = parseInt(monthSel.value);
+        const labels = [],
+          data = [];
+        if (archiveMode === "month") {
+          const last = new Date(y, m + 1, 0).getDate();
+          for (let d = 1; d <= last; d++) {
+            labels.push(d);
+            data.push(dailyData[`${y}/${m + 1}/${d}`] || 0);
+          }
+          archiveChart.data.datasets[0].label = `${m + 1}月の記録`;
+        } else {
+          for (let mo = 1; mo <= 12; mo++) {
+            labels.push(`${mo}月`);
+            let total = 0;
+            for (let d = 1; d <= 31; d++)
+              total += dailyData[`${y}/${mo}/${d}`] || 0;
+            data.push(total);
+          }
+          archiveChart.data.datasets[0].label = `${y}年の合計`;
+        }
+        archiveChart.data.labels = labels;
+        archiveChart.data.datasets[0].data = data;
+        archiveChart.update();
+      }
+
+      // タイマー
+      setInterval(() => {
+        const now = new Date();
+        const cycle =
+          (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) %
+          (25 * 60);
+        const isWork = cycle < 20 * 60;
+        document.body.className = isWork ? "work-bg" : "break-bg";
+        document.getElementById("status").textContent = isWork
+          ? "✎ 集中タイム"
+          : "🐤 ひとやすみ";
+        let rem = isWork ? 20 * 60 - cycle : 25 * 60 - cycle;
+        document.getElementById("timer").textContent = `${Math.floor(rem / 60)
+          .toString()
+          .padStart(2, "0")}:${(rem % 60).toString().padStart(2, "0")}`;
+      }, 1000);
+
+      document.getElementById("log-btn").onclick = async () => {
+        const d = new Date();
+        const k = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+        dailyData[k] = (dailyData[k] || 0) + 1;
+        await setDoc(docRef, dailyData);
+      };
+      document.getElementById("minus-btn").onclick = async () => {
+        const d = new Date();
+        const k = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+        if (dailyData[k] > 0) {
+          dailyData[k] -= 1;
+          await setDoc(docRef, dailyData);
+        }
+      };
+
+      init();
+    </script>
+  </body>
+</html>
