@@ -161,14 +161,21 @@ height: 45px;            /* すべての日でこの高さに固定されます 
 
     let cloudData = {};
     let isFirstLoad = true;
+    let isEditing = false; // ★【追加】編集中かどうかを判定するフラグ
     const LUNAR_CYCLE = 29.53059; 
     let currentBaseDate = new Date();
 
-    onSnapshot(docRef, (docSnap) => {
-        if (docSnap.exists()) cloudData = docSnap.data();
-        if (isFirstLoad) { render(); isFirstLoad = false; }
-    });
-
+   onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+        cloudData = docSnap.data();
+        // ★【修正】編集中（追記中）は、勝手に画面を書き換えないようにガード！
+        if (!isEditing) {
+            render();
+        }
+    }
+    if (isFirstLoad) { isFirstLoad = false; }
+});
+    
     window.saveToCloud = async (key, value) => {
         cloudData[key] = value;
         await setDoc(docRef, cloudData);
@@ -331,25 +338,43 @@ height: 45px;            /* すべての日でこの高さに固定されます 
         el.classList.toggle('active');
     }
 
-    window.startEdit = (displayEl) => {
-        const editEl = displayEl.nextElementSibling;
-        const currentHeight = displayEl.offsetHeight;
-        displayEl.style.display = 'none';
-        editEl.style.display = 'block';
-        editEl.style.minHeight = currentHeight + "px";
-        window.autoResize(editEl);
-        editEl.focus();
-    };
-
-    window.finishEdit = async (editEl) => {
-        const displayEl = editEl.previousElementSibling;
-        const key = editEl.getAttribute('data-key');
-        await saveToCloud(key, editEl.value);
-        displayEl.innerHTML = parseTasks(editEl.value);
-        displayEl.style.display = 'block';
-        editEl.style.display = 'none';
-        editEl.style.minHeight = "130px"; 
-    };
+   window.startEdit = (displayEl) => {
+    isEditing = true; // 編集フラグを立てる
+    const editEl = displayEl.nextElementSibling;
+    
+    // 現在の表示エリアの「実際の高さ」を取得して、編集枠の初期の高さにする
+    const currentHeight = displayEl.offsetHeight;
+    
+    displayEl.style.display = 'none';
+    editEl.style.display = 'block';
+    
+    // 【重要】現在の高さか、最低130px、どちらか大きい方を採用する
+    editEl.style.minHeight = Math.max(currentHeight, 130) + "px";
+    
+    // 既存のデータを反映（ここから追記ができる！）
+    const key = editEl.getAttribute('data-key');
+    editEl.value = cloudData[key] || "";
+    
+    window.autoResize(editEl);
+    editEl.focus();
+};
+    
+window.finishEdit = async (editEl) => {
+    const displayEl = editEl.previousElementSibling;
+    const key = editEl.getAttribute('data-key');
+    const val = editEl.value;
+    
+    await saveToCloud(key, val);
+    
+    displayEl.innerHTML = parseTasks(val);
+    displayEl.style.display = 'block';
+    editEl.style.display = 'none';
+    
+    // 【重要】次の編集のために、最小高さを130pxに戻しておく
+    editEl.style.minHeight = "130px"; 
+    
+    setTimeout(() => { isEditing = false; }, 800);
+};
 
     window.toggleTask = async (cb, lineIdx) => {
         const editEl = cb.closest('.edit-column').querySelector('textarea');
@@ -364,4 +389,5 @@ height: 45px;            /* すべての日でこの高さに固定されます 
 </script>
 </body>
 </html>
+
 
