@@ -419,8 +419,8 @@ function initMainSortables() {
         delay: 100,
         delayOnTouchOnly: true,
         touchStartThreshold: 5,
-        forceFallback: true 
-        // ★これを追加：ドラッグ開始時に文字選択を解除する
+        forceFallback: true ,
+        // これを追加：ドラッグ開始時に文字選択を解除する
         onStart: function() {
         window.getSelection().removeAllRanges();
 }
@@ -477,6 +477,7 @@ function initMainSortables() {
 </body>
 
 </html>
+
 
 
 
