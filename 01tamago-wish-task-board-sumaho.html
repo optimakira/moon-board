@@ -341,7 +341,11 @@ body {
             wishContainer.appendChild(div);
 
             new Sortable(div.querySelector('.subtask-list'), {
-                handle: '.handle', animation: 150, onEnd: (evt) => {
+                handle: '.handle', 
+                animation: 150,
+                delay: 100, // 0.1秒長押しでドラッグ開始
+                delayOnTouchOnly: true, // スマホの時だけディレイを適用 
+                onEnd: (evt) => {
                     const subtasks = wishes[i].subtasks;
                     const [movedItem] = subtasks.splice(evt.oldIndex, 1);
                     subtasks.splice(evt.newIndex, 0, movedItem);
@@ -397,14 +401,21 @@ body {
 
     function initMainSortables() {
         new Sortable(document.getElementById('wishList'), {
-            handle: '.handle', animation: 150, onEnd: (evt) => {
+            handle: '.handle', animation: 150,
+            delay: 100,             // 追加
+            delayOnTouchOnly: true, // 追加
+            onEnd: (evt) => {
                 const [movedItem] = wishes.splice(evt.oldIndex, 1);
                 wishes.splice(evt.newIndex, 0, movedItem);
                 saveToCloud();
             }
         });
         new Sortable(document.getElementById('todoList'), {
-            handle: '.handle', animation: 150, onEnd: (evt) => {
+            handle: '.handle', 
+            animation: 150, 
+            delay: 100,             // 追加
+            delayOnTouchOnly: true, // 追加
+            onEnd: (evt) => {
                 const [movedItem] = todos.splice(evt.oldIndex, 1);
                 todos.splice(evt.newIndex, 0, movedItem);
                 saveToCloud();
@@ -441,6 +452,7 @@ body {
 </body>
 
 </html>
+
 
 
 
