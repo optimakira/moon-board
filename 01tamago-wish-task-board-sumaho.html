@@ -182,6 +182,10 @@ body {
     let shells = [];
     let isFirstLoad = true;
 
+    // render関数の外側に書いてください
+let wishSortableInstance = null;
+let todoSortableInstance = null;
+    
     const statuses = [
         { icon: '⬜️', class: '' }, { icon: '☑', class: 'st-done' }, { icon: '✍️', class: '' },
         { icon: '😴', class: '' }, { icon: '⏸️', class: '' }, { icon: '☒', class: 'st-cancel' }
@@ -399,17 +403,45 @@ body {
         initMainSortables();
     }
 
-    function initMainSortables() {
-        new Sortable(document.getElementById('wishList'), {
-            handle: '.handle', animation: 150,
-            delay: 100,             // 追加
-            delayOnTouchOnly: true, // 追加
+function initMainSortables() {
+        const wishEl = document.getElementById('wishList');
+        const todoEl = document.getElementById('todoList');
+
+        // --- ここで一度「壊す」作業 ---
+        if (wishSortableInstance) wishSortableInstance.destroy();
+        if (todoSortableInstance) todoSortableInstance.destroy();
+
+        // --- 共通の設定 ---
+        const options = {
+            handle: '.handle',
+            animation: 150,
+            delay: 100,
+            delayOnTouchOnly: true,
+            touchStartThreshold: 5,
+            forceFallback: true // iPhoneでの動作をより安定させる設定
+        };
+
+        // --- 新しく作り直す ---
+        wishSortableInstance = new Sortable(wishEl, {
+            ...options,
             onEnd: (evt) => {
+                if (evt.oldIndex === evt.newIndex) return;
                 const [movedItem] = wishes.splice(evt.oldIndex, 1);
                 wishes.splice(evt.newIndex, 0, movedItem);
                 saveToCloud();
             }
         });
+
+        todoSortableInstance = new Sortable(todoEl, {
+            ...options,
+            onEnd: (evt) => {
+                if (evt.oldIndex === evt.newIndex) return;
+                const [movedItem] = todos.splice(evt.oldIndex, 1);
+                todos.splice(evt.newIndex, 0, movedItem);
+                saveToCloud();
+            }
+        });
+    }
         new Sortable(document.getElementById('todoList'), {
             handle: '.handle', 
             animation: 150, 
@@ -452,6 +484,7 @@ body {
 </body>
 
 </html>
+
 
 
 
