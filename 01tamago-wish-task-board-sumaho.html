@@ -15,7 +15,7 @@
         document.write("<h1 style='text-align:center;margin-top:100px;'>閲覧権限がありません</h1>");
         window.stop(); 
       }
-    /* </script>
+    */ </script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         body {
@@ -61,7 +61,10 @@ body {
         .handle:active { cursor: grabbing; }
         .sortable-ghost { opacity: 0.4; background: #cfd8dc !important; border: 2px dashed #999; }
         #wishList { display: grid; gap: 15px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); min-height: 50px; }
-        #todoList { display: block; min-height: 50px; } /* 指示書ボードの基本構造 */
+        
+        /* 指示書ボードもグリッドレイアウトを許容する設定を追加 */
+        #todoList { display: grid; gap: 10px; grid-template-columns: 1fr; min-height: 50px; }
+
         .item { padding: 15px; border-radius: 12px; position: relative; border-left: 10px solid #ccc; box-sizing: border-box; background: white; margin-bottom: 10px; }
       
         .item.raw { border-color: #fbc02d; background: var(--raw-color); }
@@ -104,21 +107,16 @@ body {
         min-width: 0 !important; /* PC用の最小幅設定を解除 */
     }
 
-    #wishList {
-        grid-template-columns: 1fr; /* たまごカードを1列にする */
+    /* たまごリストと指示書リストの両方を2列にする設定 */
+    #wishList, #todoList {
+        grid-template-columns: 1fr 1fr !important; /* 強制的に2列にする */
+        gap: 8px !important;
     }
 
-    /* 指示書ボード（todoList）をたまごボードのように2列にする設定 */
-    #todoList {
-        display: grid;
-        gap: 10px;
-        grid-template-columns: repeat(2, 1fr); /* 2列表示 */
-    }
-
-    /* 2列にした際に隙間を調整 */
-    #todoList .item {
-        margin-bottom: 0;
-        padding: 10px; /* 少しコンパクトに */
+    /* リスト内のアイテムの余白調整 */
+    .item {
+        margin-bottom: 0 !important; 
+        padding: 10px !important;
     }
 
     .egg-btns {
