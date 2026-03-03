@@ -1,4 +1,4 @@
-        <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,7 @@
   <title>🐣</title>
 
     <script>
-    /*  const myPassword = "かわいい"; // ムーンボードと同じ
+    /* const myPassword = "かわいい"; // ムーンボードと同じ
       let input = prompt("合言葉を入力してください：");
       
       if (input !== myPassword) {
@@ -79,14 +79,14 @@ body {
         .sub-input-box input { font-size: 0.75rem; padding: 4px; margin-bottom: 0; }
         .btn-sub-add { font-size: 0.7rem; padding: 2px 8px; background: #eee; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; }
         .harvest-group { margin-bottom: 25px; }
-        .month-header { font-size: 1rem; color: #2e7d32; border-bottom: 1px dashed #4caf50; margin-bottom: 12px; padding-bottom: 5px; font-weight: bold; }
+        .month-header { font-size: 1rem; color: #2e7d32; border-bottom: 1px dashed #4caf50; margin-bottom: 12px; padding-bottom: 5px; font-weight: bold; cursor: pointer; }
         .item.harvest { border-left: 5px solid #4caf50; background: var(--harvest-color); padding: 12px; margin-bottom: 8px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 4px; }
         .date-info { font-size: 0.7rem; color: #888; margin-top: 8px; display: block; }
         .actions { margin-top: 10px; display: flex; gap: 5px; flex-wrap: wrap; }
         .actions button { font-size: 0.7rem; padding: 4px 8px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; background: white; }
         .tag { font-size: 0.7rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; display: block; }
 
-        /* --- スマホ用の表示設定（ここを追加） --- */
+        /* --- スマホ用の表示設定 --- */
 @media (max-width: 768px) {
     .container {
         flex-direction: column; /* 横並びを縦並びに変える */
@@ -151,7 +151,13 @@ body {
     <div class="section section-harvest">
         <h2>✨ 収穫ボード (Harvest)</h2>
         <div id="harvestList"></div>
-        <div id="shellSection">
+        
+        <div id="shineSection" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+            <button class="shell-toggle" onclick="toggleShine()">✨ 輝きの記録 を表示</button>
+            <div id="shineList" style="display: none; margin-top:15px;"></div>
+        </div>
+
+        <div id="shellSection" style="margin-top: 20px;">
             <button class="shell-toggle" onclick="toggleShell()">🐣 卵の殻 アーカイブを表示</button>
             <div id="shellList" style="display: none; margin-top:15px;"></div>
         </div>
@@ -181,6 +187,7 @@ body {
     let todos = [];
     let harvests = [];
     let shells = [];
+    let shines = []; // 新機能用のデータ配列
     let isFirstLoad = true;
 
     // render関数の外側に書いてください
@@ -203,6 +210,7 @@ let todoSortableInstance = null;
             todos = data.todos || [];
             harvests = data.harvests || [];
             shells = data.shells || [];
+            shines = data.shines || []; // 新機能用
         }
         render();
 // データが揃ったので、画面を「表示（不透明度1）」にする
@@ -212,7 +220,7 @@ let todoSortableInstance = null;
     });
 
     async function saveToCloud() {
-        await setDoc(docRef, { wishes, todos, harvests, shells });
+        await setDoc(docRef, { wishes, todos, harvests, shells, shines });
     }
 
     // --- ボタンから呼ぶ関数を登録 ---
@@ -283,29 +291,66 @@ let todoSortableInstance = null;
     };
 
     window.toggleTodoStatus = (idx) => { todos[idx].statusIdx = (todos[idx].statusIdx + 1) % statuses.length; saveToCloud(); };
+    
+    // 【修正】収穫時に子タスクも記録するように変更
     window.harvestWish = (index) => {
-        const item = wishes[index]; const now = Date.now();
-        harvests.unshift({ text: item.text, created: item.created, harvested: now, days: Math.floor((now - item.created) / 86400000) });
-        wishes.splice(index, 1); saveToCloud();
+        const item = wishes[index]; 
+        const now = Date.now();
+        const subtext = (item.subtasks || []).map(s => s.text).join(', '); // 子タスクを文章化
+        harvests.unshift({ 
+            text: item.text, 
+            subtext: subtext, // 子タスク記録用フィールドを追加
+            created: item.created, 
+            harvested: now, 
+            days: Math.floor((now - item.created) / 86400000) 
+        });
+        wishes.splice(index, 1); 
+        saveToCloud();
     };
+
+    // 新機能: 輝きの記録へ移動
+    window.moveToShine = (index) => {
+        const item = todos[index];
+        const subtext = (item.subtasks || []).map(s => s.text).join(', ');
+        shines.unshift({ 
+            text: item.text, 
+            subtext: subtext, 
+            shined: Date.now() 
+        });
+        todos.splice(index, 1); 
+        saveToCloud();
+    };
+
     window.moveToShell = (index) => {
         const item = wishes[index];
         shells.unshift({ text: item.text, created: item.created, shelved: Date.now() });
         wishes.splice(index, 1); saveToCloud();
     };
+
     window.deleteTodo = (idx) => { if(confirm("ToDoを削除しますか？")) { todos.splice(idx, 1); saveToCloud(); } };
     window.deleteWish = (i) => { if(confirm("削除しますか？")) { wishes.splice(i, 1); saveToCloud(); } };
     window.toggleShell = () => { const list = document.getElementById('shellList'); list.style.display = list.style.display === 'none' ? 'block' : 'none'; };
+    window.toggleShine = () => { const list = document.getElementById('shineList'); list.style.display = list.style.display === 'none' ? 'block' : 'none'; };
     window.deleteHarvest = (i) => { harvests.splice(i, 1); saveToCloud(); };
     window.deleteShell = (i) => { shells.splice(i, 1); saveToCloud(); };
+    window.deleteShine = (i) => { if(confirm("記録を削除しますか？")) { shines.splice(i, 1); saveToCloud(); } };
+
+    // 【追加】特定の月の表示を切り替える関数
+    window.toggleMonth = (monthId) => {
+        const target = document.getElementById(monthId);
+        if (target) {
+            target.style.display = target.style.display === 'none' ? 'block' : 'none';
+        }
+    };
 
     function render() {
         const wishContainer = document.getElementById('wishList');
         const todoContainer = document.getElementById('todoList');
         const harvestContainer = document.getElementById('harvestList');
         const shellContainer = document.getElementById('shellList');
+        const shineContainer = document.getElementById('shineList');
         
-        wishContainer.innerHTML = ''; todoContainer.innerHTML = ''; harvestContainer.innerHTML = ''; shellContainer.innerHTML = '';
+        wishContainer.innerHTML = ''; todoContainer.innerHTML = ''; harvestContainer.innerHTML = ''; shellContainer.innerHTML = ''; shineContainer.innerHTML = '';
         let counts = { raw: 0, boiled: 0, marinated: 0 };
 
         wishes.forEach((item, i) => {
@@ -375,12 +420,16 @@ let todoSortableInstance = null;
                 </div>`;
             }).join('');
 
+            // 【修正箇所】🗑️ボタンの上に✨️ボタンを縦に並べるよう構造を変更
             div.innerHTML = `
-                <div class="task-row">
+                <div class="task-row" style="display:flex; align-items: flex-start; gap:8px;">
                     <span class="handle">⠿</span>
                     <span class="status-icon" onclick="toggleTodoStatus(${i})">${s.icon}</span>
                     <span class="task-text ${s.class}" onclick="toggleTodoStatus(${i})">${item.text}</span>
-                    <button onclick="deleteTodo(${i})" style="border:none; background:none; cursor:pointer; font-size:12px; color:#ccc;">🗑️</button>
+                    <div style="display:flex; flex-direction:column; gap:5px; align-items:center;">
+                        <button onclick="moveToShine(${i})" style="border:none; background:none; cursor:pointer; font-size:14px; padding:2px;">✨</button>
+                        <button onclick="deleteTodo(${i})" style="border:none; background:none; cursor:pointer; font-size:14px; color:#ccc; padding:2px;">🗑️</button>
+                    </div>
                 </div>
                 <div class="subtask-list">${subHtml}</div>
                 <div class="sub-input-box">
@@ -399,7 +448,7 @@ let todoSortableInstance = null;
             });
         });
 
-        renderHarvestAndShells(harvestContainer, shellContainer);
+        renderHarvestAndShells(harvestContainer, shellContainer, shineContainer);
         updateStatusBar(counts, wishes.length);
         initMainSortables();
     }
@@ -446,24 +495,66 @@ function initMainSortables() {
             saveToCloud();
         }
     });
-} // <--- 閉じカッコはこれ1つで終わり！
+}
 
-    function renderHarvestAndShells(harvestContainer, shellContainer) {
+    // 【修正】収穫ボードの表示形式を変更（親タイトル［子タスク, 子タスク...］）
+    function renderHarvestAndShells(harvestContainer, shellContainer, shineContainer) {
         const groups = {};
-        harvests.forEach((item, idx) => { const key = formatYearMonth(item.harvested); if (!groups[key]) groups[key] = []; groups[key].push({...item, originalIndex: idx}); });
+        const currentMonth = formatYearMonth(Date.now()); 
+
+        harvests.forEach((item, idx) => { 
+            const key = formatYearMonth(item.harvested); 
+            if (!groups[key]) groups[key] = []; 
+            groups[key].push({...item, originalIndex: idx}); 
+        });
+
         Object.keys(groups).forEach(month => {
-            const g = document.createElement('div'); g.className = 'harvest-group'; g.innerHTML = `<div class="month-header">📅 ${month} の収穫</div>`;
+            const isCurrent = month === currentMonth;
+            const monthId = `month-${month.replace(/\s+/g, '')}`;
+            
+            const g = document.createElement('div'); 
+            g.className = 'harvest-group';
+            
+            const arrow = isCurrent ? '' : ' ▾';
+            const displayStyle = isCurrent ? 'block' : 'none';
+
+            g.innerHTML = `<div class="month-header" onclick="toggleMonth('${monthId}')">📅 ${month} の収穫${arrow}</div>
+                           <div id="${monthId}" style="display: ${displayStyle}"></div>`;
+            
+            const monthList = g.querySelector(`#${monthId}`);
+            
             groups[month].forEach(item => {
-                const d = document.createElement('div'); d.className = 'item harvest';
-                d.innerHTML = `<div class="harvest-main"><strong>${item.text}</strong><button onclick="deleteHarvest(${item.originalIndex})" style="border:none; background:none; cursor:pointer;">🗑️</button></div><div class="harvest-detail">📅 ${formatDate(item.created)} → ${formatDate(item.harvested)}　⏳ ${item.days}日間</div>`;
-                g.appendChild(d);
+                const d = document.createElement('div'); 
+                // 罫線を消すために border-left を 0 に変更
+                d.className = 'item harvest';
+                d.style.borderLeft = '0'; 
+
+                // 親タスクタイトル［子タスク１, 子タスク２…］の形式を作成
+                const subPart = item.subtext ? ` ［${item.subtext}］` : '';
+                
+                d.innerHTML = `
+                    <div class="harvest-main" style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <strong>${item.text}${subPart}</strong>
+                        <button onclick="deleteHarvest(${item.originalIndex})" style="border:none; background:none; cursor:pointer; color:#ccc;">🗑️</button>
+                    </div>
+                    <div class="harvest-detail">📅 ${formatDate(item.created)} → ${formatDate(item.harvested)}　⏳ ${item.days}日間</div>`;
+                monthList.appendChild(d);
             });
             harvestContainer.appendChild(g);
         });
+        
         shells.forEach((item, i) => {
             const sd = document.createElement('div'); sd.className = 'shell-item';
             sd.innerHTML = `<span style="font-size:0.8rem;">・${item.text} <small>(${formatDate(item.created)}～${formatDate(item.shelved)})</small></span><button onclick="deleteShell(${i})" style="border:none; background:none; color:#ccc; cursor:pointer;">🗑️</button>`;
             shellContainer.appendChild(sd);
+        });
+
+        // 輝きの記録を描画
+        shines.forEach((item, i) => {
+            const sd = document.createElement('div'); sd.className = 'shell-item';
+            const subPart = item.subtext ? ` <span style="color:#666;">[${item.subtext}]</span>` : '';
+            sd.innerHTML = `<span style="font-size:0.8rem;">✨ ${item.text}${subPart} <small>(${formatDate(item.shined)})</small></span><button onclick="deleteShine(${i})" style="border:none; background:none; color:#ccc; cursor:pointer;">🗑️</button>`;
+            shineContainer.appendChild(sd);
         });
     }
 
@@ -475,15 +566,4 @@ function initMainSortables() {
 
 </script>
 </body>
-
 </html>
-
-
-
-
-
-
-
-
-
-
