@@ -22,9 +22,8 @@
   font-family: 'Zen Maru Gothic', sans-serif;
 }
 
-/* タスクの文字だけをもっと可愛くしたい場合 */
 .task-item {
-  font-weight: 700; /* 少し太めにすると可愛さアップ */
+  font-weight: 700;
 }
 
         :root {
@@ -35,17 +34,26 @@
             --harvest-color: #e8f5e9;
             --shell-color: #f1f1f1;
         }
-/* ページ全体を最初は隠しておく */
 body {
    /* opacity: 0;
-    transition: opacity 0.5s ease; /* パッと出すための演出 */
+    transition: opacity 0.5s ease;
 }
 
 { font-family: sans-serif; background-color: #eceff1; margin: 0; padding: 20px; color: #37474f; }
-        .container { display: flex; gap: 20px; max-width: 1600px; margin: 0 auto; flex-wrap: wrap; align-items: flex-start; }
+        .container { display: flex; gap: 20px; max-width: 1600px; margin: 0 auto; flex-wrap: wrap; align-items: flex-start; flex-direction: column; }
         .section { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); box-sizing: border-box; min-width: 320px; }
-        .section-wishes { flex: 7; min-width: 600px; }
-        .section-side { flex: 0 0 320px ; min-width: 320px; }
+
+        /* ★ 上段：ウィッシュ＋指示書を横並びにするラッパー */
+        .top-row {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            align-items: flex-start;
+        }
+        /* ★ 両セクションをPC時は常に横並び・同じ幅 */
+        .section-wishes { flex: 6 1 0; min-width: 0; }
+        .section-side   { flex: 4 1 0; min-width: 0; }
+
         .section-harvest { flex: 1 1 100%; margin-top: 10px; }
         h2 { border-bottom: 2px solid #333; padding-bottom: 10px; font-size: 1.2rem; display: flex; justify-content: space-between; align-items: center; }
         .input-box { margin-bottom: 20px; border: 2px solid #eee; padding: 15px; border-radius: 15px; }
@@ -60,7 +68,13 @@ body {
         .handle { cursor: grab; padding-right: 8px; color: #ccc; }
         .handle:active { cursor: grabbing; }
         .sortable-ghost { opacity: 0.4; background: #cfd8dc !important; border: 2px dashed #999; }
+
+        /* たまごウィッシュ：画面幅に応じて列数が変わる（従来通り） */
         #wishList { display: grid; gap: 15px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); min-height: 50px; }
+
+        /* ★ 指示書：常に2列固定、カード幅はボード幅に合わせて伸びる */
+        #todoList { display: grid; gap: 15px; grid-template-columns: repeat(2, 1fr); min-height: 50px; }
+
         .item { padding: 15px; border-radius: 12px; position: relative; border-left: 10px solid #ccc; box-sizing: border-box; background: white; margin-bottom: 10px; }
       
         .item.raw { border-color: #fbc02d; background: var(--raw-color); }
@@ -89,45 +103,39 @@ body {
         /* --- スマホ用の表示設定 --- */
 @media (max-width: 780px) {
     .container {
-        flex-direction: column; /* 横並びを縦並びに変える */
         padding: 10px;
     }
 
+    /* ★ スマホ時：上段ラッパーを縦積みに */
+    .top-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
     .section {
-        width: 100% !important; /* 幅を画面いっぱいに */
+        width: 100% !important;
         min-width: 0 !important;
         margin-bottom: 20px;
     }
 
-    .section-wishes {
-        min-width: 0 !important; /* PC用の最小幅設定を解除 */
+    .section-wishes, .section-side {
+        width: 100% !important;
     }
 
-    /* たまごボードと指示書ボードを2列グリッドに */
+    /* スマホ時：両方のカードを2列固定 */
     #wishList, #todoList {
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 10px !important;
     }
 
-    /* 2列表示時のカードの余白を小さめに調整 */
-    #todoList .item {
-        margin-bottom: 0;
-        font-size: 0.85rem;
-    }
-
-    /* 2列表示時のサブタスク入力欄を小さく */
-    #todoList .sub-input-box input {
-        font-size: 0.7rem;
-    }
-
     .egg-btns {
-        flex-wrap: wrap; /* ボタンが入り切らない時に折り返す */
+        flex-wrap: wrap;
     }
 
     .egg-btns button {
-        font-size: 0.9rem; /* 文字を少し小さくして収まりやすく */
-        padding: 12px 5px; /* 押しやすい高さにする */
+        font-size: 0.9rem;
+        padding: 12px 5px;
     }
 }
         
@@ -136,6 +144,7 @@ body {
 <body>
 
 <div class="container">
+<div class="top-row">
     <div class="section section-wishes">
         <h2>🥚 たまごウィッシュリスト</h2>
         <div class="status-bar" id="statusBar">比率: 加熱待ち...</div>
@@ -161,6 +170,7 @@ body {
         </div>
         <div id="todoList"></div>
     </div>
+</div>
 
     <div class="section section-harvest">
         <h2>✨ 収穫ボード (Harvest)</h2>
@@ -179,7 +189,6 @@ body {
 </div>
 
 <script type="module">
-    // --- Firebaseの準備 ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -196,15 +205,13 @@ body {
     const db = getFirestore(app);
     const docRef = doc(db, "data", "tamago-data");
 
-    // --- データと状態 ---
     let wishes = [];
     let todos = [];
     let harvests = [];
     let shells = [];
-    let shines = []; // 新機能用のデータ配列
+    let shines = [];
     let isFirstLoad = true;
 
-    // render関数の外側に書いてください
 let wishSortableInstance = null;
 let todoSortableInstance = null;
     
@@ -216,7 +223,6 @@ let todoSortableInstance = null;
     const formatDate = (ts) => new Date(ts).toLocaleDateString('ja-JP');
     const formatYearMonth = (ts) => { const d = new Date(ts); return `${d.getFullYear()}年 ${d.getMonth() + 1}月`; };
 
-    // --- Firebase リアルタイム購読 ---
     onSnapshot(docRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
@@ -224,12 +230,10 @@ let todoSortableInstance = null;
             todos = data.todos || [];
             harvests = data.harvests || [];
             shells = data.shells || [];
-            shines = data.shines || []; // 新機能用
+            shines = data.shines || [];
         }
         render();
-// データが揃ったので、画面を「表示（不透明度1）」にする
     document.body.style.opacity = "1"; 
-    
     isFirstLoad = false;
     });
 
@@ -237,7 +241,6 @@ let todoSortableInstance = null;
         await setDoc(docRef, { wishes, todos, harvests, shells, shines });
     }
 
-    // --- ボタンから呼ぶ関数を登録 ---
     window.addWish = (type) => {
         const input = document.getElementById('wishInput');
         if (!input.value) return;
@@ -306,14 +309,13 @@ let todoSortableInstance = null;
 
     window.toggleTodoStatus = (idx) => { todos[idx].statusIdx = (todos[idx].statusIdx + 1) % statuses.length; saveToCloud(); };
     
-    // 【修正】収穫時に子タスクも記録するように変更
     window.harvestWish = (index) => {
         const item = wishes[index]; 
         const now = Date.now();
-        const subtext = (item.subtasks || []).map(s => s.text).join(', '); // 子タスクを文章化
+        const subtext = (item.subtasks || []).map(s => s.text).join(', ');
         harvests.unshift({ 
             text: item.text, 
-            subtext: subtext, // 子タスク記録用フィールドを追加
+            subtext: subtext,
             created: item.created, 
             harvested: now, 
             days: Math.floor((now - item.created) / 86400000) 
@@ -322,7 +324,6 @@ let todoSortableInstance = null;
         saveToCloud();
     };
 
-    // 新機能: 輝きの記録へ移動
     window.moveToShine = (index) => {
         const item = todos[index];
         const subtext = (item.subtasks || []).map(s => s.text).join(', ');
@@ -349,7 +350,6 @@ let todoSortableInstance = null;
     window.deleteShell = (i) => { shells.splice(i, 1); saveToCloud(); };
     window.deleteShine = (i) => { if(confirm("記録を削除しますか？")) { shines.splice(i, 1); saveToCloud(); } };
 
-    // 【追加】特定の月の表示を切り替える関数
     window.toggleMonth = (monthId) => {
         const target = document.getElementById(monthId);
         if (target) {
@@ -407,8 +407,8 @@ let todoSortableInstance = null;
             new Sortable(div.querySelector('.subtask-list'), {
                 handle: '.handle', 
                 animation: 150,
-                delay: 100, // 0.1秒長押しでドラッグ開始
-                delayOnTouchOnly: true, // スマホの時だけディレイを適用 
+                delay: 100,
+                delayOnTouchOnly: true,
                 onEnd: (evt) => {
                     const subtasks = wishes[i].subtasks;
                     const [movedItem] = subtasks.splice(evt.oldIndex, 1);
@@ -434,7 +434,6 @@ let todoSortableInstance = null;
                 </div>`;
             }).join('');
 
-            // 【修正箇所】🗑️ボタンの上に✨️ボタンを縦に並べるよう構造を変更
             div.innerHTML = `
                 <div class="task-row" style="display:flex; align-items: flex-start; gap:8px;">
                     <span class="handle">⠿</span>
@@ -472,7 +471,6 @@ function initMainSortables() {
     const wishEl = document.getElementById('wishList');
     const todoEl = document.getElementById('todoList');
 
-    // 1. 古い監視役をクビにする（これがiPhone対策）
     if (wishSortableInstance) wishSortableInstance.destroy();
     if (todoSortableInstance) todoSortableInstance.destroy();
 
@@ -482,14 +480,12 @@ function initMainSortables() {
         delay: 100,
         delayOnTouchOnly: true,
         touchStartThreshold: 5,
-        forceFallback: true ,
-        // これを追加：ドラッグ開始時に文字選択を解除する
+        forceFallback: true,
         onStart: function() {
-        window.getSelection().removeAllRanges();
-}
-};
+            window.getSelection().removeAllRanges();
+        }
+    };
 
-    // 2. 新しく監視役を雇う
     wishSortableInstance = new Sortable(wishEl, {
         ...options,
         onEnd: (evt) => {
@@ -511,7 +507,6 @@ function initMainSortables() {
     });
 }
 
-    // 【修正】収穫ボードの表示形式を変更（親タイトル［子タスク, 子タスク...］）
     function renderHarvestAndShells(harvestContainer, shellContainer, shineContainer) {
         const groups = {};
         const currentMonth = formatYearMonth(Date.now()); 
@@ -539,11 +534,9 @@ function initMainSortables() {
             
             groups[month].forEach(item => {
                 const d = document.createElement('div'); 
-                // 罫線を消すために border-left を 0 に変更
                 d.className = 'item harvest';
                 d.style.borderLeft = '0'; 
 
-                // 親タスクタイトル［子タスク１, 子タスク２…］の形式を作成
                 const subPart = item.subtext ? ` ［${item.subtext}］` : '';
                 
                 d.innerHTML = `
@@ -563,7 +556,6 @@ function initMainSortables() {
             shellContainer.appendChild(sd);
         });
 
-        // 輝きの記録を描画
         shines.forEach((item, i) => {
             const sd = document.createElement('div'); sd.className = 'shell-item';
             const subPart = item.subtext ? ` <span style="color:#666;">[${item.subtext}]</span>` : '';
