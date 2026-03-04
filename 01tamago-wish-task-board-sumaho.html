@@ -103,11 +103,22 @@ body {
         min-width: 0 !important; /* PC用の最小幅設定を解除 */
     }
 
-    /* 指示書(ToDo)のリストもたまごボードと同じく2列にする設定を追加 */
+    /* たまごボードと指示書ボードを2列グリッドに */
     #wishList, #todoList {
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 10px !important;
+    }
+
+    /* 2列表示時のカードの余白を小さめに調整 */
+    #todoList .item {
+        margin-bottom: 0;
+        font-size: 0.85rem;
+    }
+
+    /* 2列表示時のサブタスク入力欄を小さく */
+    #todoList .sub-input-box input {
+        font-size: 0.7rem;
     }
 
     .egg-btns {
