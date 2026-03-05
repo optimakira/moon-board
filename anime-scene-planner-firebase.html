@@ -501,6 +501,21 @@ const db  = getFirestore(app);
 let projects = {};   // { id: { name, desc, scenes:[] } }
 let activeId = null;
 let saveTimer = null;
+let isEditing = false;  // 入力中フラグ
+
+// 入力中フラグ管理（focusin/focusout で検知）
+document.addEventListener('focusin', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') isEditing = true;
+});
+document.addEventListener('focusout', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+    // 少し待って次のfocusinがなければ編集終了とみなす
+    setTimeout(() => {
+      const a = document.activeElement;
+      if (!a || (a.tagName !== 'INPUT' && a.tagName !== 'TEXTAREA')) isEditing = false;
+    }, 100);
+  }
+});
 
 const syncBadge      = document.getElementById('syncBadge');
 const projectBar     = document.getElementById('projectBar');
@@ -554,7 +569,7 @@ onSnapshot(colRef, snap => {
 
   renderTabs();
   if (activeId && !projects[activeId]) { activeId = null; showNoProject(); }
-  else if (activeId) renderScenes();
+  else if (activeId && !isEditing) renderScenes();  // 入力中は再描画しない
 
   setSyncBadge('synced');
   document.body.classList.add('ready');
@@ -828,7 +843,19 @@ function renderScenes() {
   sceneList.querySelectorAll('.scene-title-input').forEach(el => {
     el.addEventListener('input', () => {
       const s = projects[activeId]?.scenes?.find(x=>x.id==el.dataset.id);
-      if(s) { s.title = el.value; renderTabs(); scheduleSave(activeId); }
+      if(s) {
+        s.title = el.value;
+        // タブのカウント表示だけ更新（全再描画しない）
+        document.querySelectorAll('.project-tab').forEach(tab => {
+          if(tab.dataset && activeId) {
+            const countEl = tab.querySelector('.tab-count');
+            if(countEl && tab.classList.contains('active')) {
+              countEl.textContent = (projects[activeId].scenes||[]).length;
+            }
+          }
+        });
+        scheduleSave(activeId);
+      }
     });
   });
   sceneList.querySelectorAll('.scene-memo-input').forEach(el => {
