@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>こいん 💰</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{
+    min-height:100vh;
+    background:linear-gradient(160deg,#0a0a14 0%,#12122a 60%,#0f1a24 100%);
+    font-family:'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;
+    color:#f0f0ff;
+    display:flex;flex-direction:column;align-items:center;
+    padding-bottom:90px;
+  }
+  .blob1{position:fixed;top:-120px;right:-80px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(100,100,255,.07) 0%,transparent 70%);pointer-events:none}
+  .blob2{position:fixed;bottom:-80px;left:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(255,80,120,.06) 0%,transparent 70%);pointer-events:none}
+  @keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-130px) scale(1.6)}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pulseBtn{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  .ca{animation:slideUp .35s ease both}
+  .card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);backdrop-filter:blur(12px);border-radius:20px}
+  .rr:hover{background:rgba(255,255,255,.04)}
+  .db{opacity:0;transition:opacity .2s}.rr:hover .db,.rr:focus-within .db{opacity:1}
+  .tb{transition:all .18s ease;cursor:pointer}
+  .cb{transition:all .15s ease;cursor:pointer}.cb:hover{transform:scale(1.06)}
+  input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.7)}
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:4px}
+  #wrap{width:100%;max-width:440px;padding:0 22px;display:flex;flex-direction:column;gap:14px}
+  .pill{border-radius:10px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;transition:all .13s;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:rgba(255,255,255,.55)}
+  .pill.active{background:rgba(102,126,234,.28);border-color:#667eea;color:#a5b4fc}
+  .pill.disabled{opacity:.3;cursor:default}
+  input,button{font-family:inherit}
+  .inp{width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:13px;padding:11px 14px;font-size:15px;color:#fff;outline:none}
+  .btn-main{background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:18px;padding:20px;cursor:pointer;color:#fff;font-size:19px;font-weight:900;box-shadow:0 8px 28px rgba(102,126,234,.38);animation:pulseBtn 2.2s ease-in-out infinite;width:100%}
+  .btn-add{background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:17px;padding:19px;cursor:pointer;color:#fff;font-size:17px;font-weight:900;width:100%;box-shadow:0 8px 24px rgba(102,126,234,.32)}
+  .btn-add:disabled{background:rgba(255,255,255,.07);box-shadow:none;color:rgba(255,255,255,.25);cursor:not-allowed}
+  .del-btn{background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.3);border-radius:6px;color:#ff8080;font-size:11px;cursor:pointer;padding:2px 7px}
+  .section-label{font-size:12px;color:rgba(255,255,255,.4);font-weight:700}
+  .date-group-header{padding:7px 18px;font-size:11px;color:rgba(255,255,255,.3);background:rgba(255,255,255,.025);font-weight:700}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:flex;align-items:flex-end;justify-content:center;animation:fadein .2s ease}
+  .modal{width:100%;max-width:440px;background:#1a1a2e;border:1px solid rgba(255,255,255,.12);border-radius:24px 24px 0 0;padding:24px 22px 36px;max-height:85vh;overflow-y:auto}
+  .toast{position:fixed;top:24px;left:50%;transform:translateX(-50%);background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.4);border-radius:12px;padding:10px 20px;font-size:13px;color:#4ADE80;font-weight:700;z-index:200;animation:fadein .3s ease;pointer-events:none}
+  .nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,20,.96);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.07);display:flex;justify-content:center;padding:10px 0 18px}
+  .nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:0 20px;cursor:pointer;transition:all .18s}
+  .nav-icon{display:flex;align-items:center;justify-content:center;border-radius:12px;font-size:18px;transition:all .2s}
+  .nav-icon.big{width:50px;height:50px;border-radius:16px;background:linear-gradient(135deg,#667eea,#764ba2);font-size:22px;margin-top:-18px;box-shadow:0 4px 18px rgba(102,126,234,.4)}
+  .nav-icon.active{background:rgba(102,126,234,.18);border:1px solid rgba(102,126,234,.35)}
+  .nav-label{font-size:9px;color:rgba(255,255,255,.3)}
+  .nav-label.active{color:#a5b4fc;font-weight:700}
+  svg.bar-wrap{width:100%}
+  .loading-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;font-size:36px;animation:spin 1.5s linear infinite}
+</style>
+</head>
+<body>
+<div class="blob1"></div>
+<div class="blob2"></div>
+<div id="root"><div class="loading-screen">💰</div></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, setDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ── Firebase 設定 ──────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyBEE451bCNLV-Ty337LyZryFlZqqiN4mxo",
+  authDomain: "moonboard-27ebf.firebaseapp.com",
+  projectId: "moonboard-27ebf",
+  storageBucket: "moonboard-27ebf.firebasestorage.app",
+  messagingSenderId: "437383444283",
+  appId: "1:437383444283:web:f2fab00c5e190b2ca9291e",
+  measurementId: "G-KW63NEKMZP"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── 共有スペースID（URLを知っている人が全員同じデータを使う） ──
+const SPACE_ID = "shared";
+
+// ── 定数 ──────────────────────────────────────────────────
+const BUDGET = 50000;
+const QUICK  = [300,500,1000,1500,2000,3000];
+const MONTHS = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+const PRESET_COLORS = ["#FF6B6B","#FFA94D","#74C0FC","#B197FC","#63E6BE","#F783AC","#69DB7C","#FFE066","#7EC8E3","#A9A9A9"];
+const PRESET_EMOJIS = ["🏷","🎵","✈️","🐾","🌿","💄","📚","🍺","🎁","🏋️","🚗","💻"];
+const DEFAULT_CATS  = [
+  {id:"food",emoji:"🍱",label:"食費",color:"#FF6B6B",order:0},
+  {id:"cafe",emoji:"☕",label:"カフェ",color:"#FFA94D",order:1},
+  {id:"transport",emoji:"🚃",label:"交通",color:"#74C0FC",order:2},
+  {id:"shopping",emoji:"🛍",label:"買い物",color:"#B197FC",order:3},
+  {id:"entertainment",emoji:"🎮",label:"娯楽",color:"#63E6BE",order:4},
+  {id:"health",emoji:"💊",label:"医療",color:"#F783AC",order:5},
+  {id:"utility",emoji:"🏠",label:"光熱費",color:"#69DB7C",order:6},
+  {id:"other",emoji:"📦",label:"その他",color:"#A9A9A9",order:7},
+];
+
+// ── ユーティリティ ─────────────────────────────────────────
+const yen   = n  => `¥${Number(n).toLocaleString()}`;
+const today = () => new Date().toISOString().slice(0,10);
+const toYM  = d  => d.slice(0,7);
+const toY   = d  => d.slice(0,4);
+
+// ── State ──────────────────────────────────────────────────
+let state = {
+  screen:"home",
+  records:[],
+  categories:[],
+  syncing:true,
+  // add form
+  selCat:null, amount:"", note:"", addDate:today(),
+  // review
+  reviewMode:"month",
+  reviewYear: new Date().getFullYear(),
+  reviewMonth: new Date().getMonth()+1,
+  showYoY:false,
+  // cat editor
+  showCatEditor:false,
+  newEmoji:"🏷", newLabel:"", newColor:"#7EC8E3",
+  deletingCatId:null,
+  // toast
+  toast:null,
+};
+
+function setState(patch){ state={...state,...patch}; render(); }
+
+// ── Firebase リアルタイム同期 ──────────────────────────────
+const recCol = collection(db,"spaces",SPACE_ID,"records");
+const catCol = collection(db,"spaces",SPACE_ID,"categories");
+
+onSnapshot(query(recCol,orderBy("date","desc")), snap => {
+  const records = snap.docs.map(d=>({...d.data(),fid:d.id}));
+  setState({records, syncing:false});
+});
+
+onSnapshot(catCol, snap => {
+  if(snap.empty){
+    DEFAULT_CATS.forEach(cat => setDoc(doc(db,"spaces",SPACE_ID,"categories",cat.id),cat));
+  } else {
+    const categories = snap.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>(a.order||0)-(b.order||0));
+    setState({categories});
+  }
+});
+
+// ── CRUD ───────────────────────────────────────────────────
+async function addRecord(){
+  const {selCat,amount,note,addDate} = state;
+  if(!selCat||!amount) return;
+  await addDoc(recCol,{category:selCat,amount:parseInt(amount),note:note||"記録",date:addDate,createdAt:Date.now()});
+  setState({selCat:null,amount:"",note:"",addDate:today(),screen:"home"});
+  showToast("記録したよ！✨");
+}
+async function deleteRecord(fid){
+  await deleteDoc(doc(db,"spaces",SPACE_ID,"records",fid));
+}
+async function addCategory(){
+  const {newEmoji,newLabel,newColor,categories} = state;
+  if(!newLabel.trim()) return;
+  const id=`custom_${Date.now()}`;
+  await setDoc(doc(db,"spaces",SPACE_ID,"categories",id),{id,emoji:newEmoji,label:newLabel.trim(),color:newColor,order:categories.length});
+  setState({newLabel:"",newEmoji:"🏷",newColor:"#7EC8E3"});
+  showToast("カテゴリを追加しました！");
+}
+async function deleteCategory(id){
+  setState({deletingCatId:id});
+  await deleteDoc(doc(db,"spaces",SPACE_ID,"categories",id));
+  setState({deletingCatId:null});
+}
+
+function showToast(msg){
+  setState({toast:msg});
+  setTimeout(()=>setState({toast:null}),2200);
+}
+
+// ── Derived ────────────────────────────────────────────────
+function derived(){
+  const {records,categories,reviewMode,reviewYear,reviewMonth} = state;
+  const catMap = Object.fromEntries(categories.map(c=>[c.id,c]));
+  const todayStr=today(), curYM=toYM(todayStr);
+  const todayRecs  = records.filter(r=>r.date===todayStr);
+  const todayTotal = todayRecs.reduce((s,r)=>s+r.amount,0);
+  const monthTotal = records.filter(r=>toYM(r.date)===curYM).reduce((s,r)=>s+r.amount,0);
+  const remaining  = BUDGET-monthTotal;
+  const ratio      = Math.min(monthTotal/BUDGET,1);
+  const sc         = ratio<.6?"#4ADE80":ratio<.85?"#FFA94D":"#FF6B6B";
+  const se         = ratio<.6?"🟢":ratio<.85?"🟡":"🔴";
+  const st         = ratio<.6?"余裕あり！":ratio<.85?"そろそろ注意":"ピンチ！";
+  const allYears   = [...new Set(records.map(r=>parseInt(toY(r.date))))].sort();
+
+  const rYM   = `${reviewYear}-${String(reviewMonth).padStart(2,"0")}`;
+  const pYear = reviewYear-1;
+  const pYM   = `${pYear}-${String(reviewMonth).padStart(2,"0")}`;
+  const revRecs  = reviewMode==="month" ? records.filter(r=>toYM(r.date)===rYM) : records.filter(r=>toY(r.date)===String(reviewYear));
+  const prevRecs = reviewMode==="month" ? records.filter(r=>toYM(r.date)===pYM)  : records.filter(r=>toY(r.date)===String(pYear));
+  const revTotal  = revRecs.reduce((s,r)=>s+r.amount,0);
+  const prevTotal = prevRecs.reduce((s,r)=>s+r.amount,0);
+
+  const monthlyBars = MONTHS.map((_,mi)=>{
+    const ym=`${reviewYear}-${String(mi+1).padStart(2,"0")}`;
+    return {label:`${mi+1}月`,value:records.filter(r=>toYM(r.date)===ym).reduce((s,r)=>s+r.amount,0),highlight:reviewMode==="month"&&mi+1===reviewMonth};
+  });
+  const prevMonthlyBars = MONTHS.map((_,mi)=>{
+    const ym=`${pYear}-${String(mi+1).padStart(2,"0")}`;
+    return {label:`${mi+1}月`,value:records.filter(r=>toYM(r.date)===ym).reduce((s,r)=>s+r.amount,0)};
+  });
+
+  const donutSegs = categories.map(cat=>({
+    label:cat.label,color:cat.color,catId:cat.id,
+    value:revRecs.filter(r=>r.category===cat.id).reduce((s,r)=>s+r.amount,0),
+    prevValue:prevRecs.filter(r=>r.category===cat.id).reduce((s,r)=>s+r.amount,0),
+  })).filter(s=>s.value>0).sort((a,b)=>b.value-a.value);
+
+  const grouped={};
+  revRecs.forEach(r=>{grouped[r.date]=grouped[r.date]||[];grouped[r.date].push(r);});
+  const groupedByDate=Object.entries(grouped).sort((a,b)=>b[0].localeCompare(a[0]));
+
+  const allGrouped={};
+  records.forEach(r=>{allGrouped[r.date]=allGrouped[r.date]||[];allGrouped[r.date].push(r);});
+  const allGroupedByDate=Object.entries(allGrouped).sort((a,b)=>b[0].localeCompare(a[0]));
+
+  return {catMap,todayRecs,todayTotal,monthTotal,remaining,ratio,sc,se,st,allYears,rYM,pYear,pYM,revRecs,prevRecs,revTotal,prevTotal,monthlyBars,prevMonthlyBars,donutSegs,groupedByDate,allGroupedByDate,curYM};
+}
+
+// ── HTML builders ──────────────────────────────────────────
+function barChart(data,color="#667eea",compare=null,height=72){
+  const all=[...data.map(d=>d.value),...(compare||[]).map(d=>d.value)];
+  const mx=Math.max(...all,1);
+  const bars=data.map((d,i)=>{
+    const h=Math.round((d.value/mx)*height);
+    const bg=d.highlight?`linear-gradient(180deg,${color},${color}88)`:`rgba(255,255,255,0.12)`;
+    const comp=compare&&compare[i]?`<div style="flex:1;border-radius:3px 3px 0 0;height:${Math.round((compare[i].value/mx)*height)}px;background:rgba(255,255,255,0.22);min-height:${compare[i].value>0?3:0}px"></div>`:"";
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+      <div style="width:100%;display:flex;gap:2px;align-items:flex-end;height:${height}px">
+        <div style="flex:1;border-radius:3px 3px 0 0;height:${h}px;background:${bg};min-height:${d.value>0?3:0}px;transition:height .5s"></div>
+        ${comp}
+      </div>
+      <div style="font-size:9px;color:rgba(255,255,255,.38);white-space:nowrap">${d.label}</div>
+    </div>`;
+  }).join("");
+  return `<div style="display:flex;align-items:flex-end;gap:${compare?3:5}px;height:${height+20}px">${bars}</div>`;
+}
+
+function donut(segs,size=130){
+  const r=38,cx=60,cy=60,circ=2*Math.PI*r;
+  const tot=segs.reduce((s,g)=>s+g.value,0)||1;
+  let off=0;
+  const circles=segs.map(seg=>{
+    const dash=(seg.value/tot)*circ,gap=circ-dash;
+    const el=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="18" stroke-dasharray="${dash} ${gap}" stroke-dashoffset="${-off}" stroke-linecap="butt"/>`;
+    off+=dash; return el;
+  }).join("");
+  return `<svg width="${size}" height="${size}" viewBox="0 0 120 120">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="18"/>
+    ${circles}
+    <text x="${cx}" y="${cy-6}" text-anchor="middle" fill="white" font-size="10" font-weight="700">合計</text>
+    <text x="${cx}" y="${cy+9}" text-anchor="middle" fill="rgba(255,255,255,.7)" font-size="9">¥${segs.reduce((s,g)=>s+g.value,0).toLocaleString()}</text>
+  </svg>`;
+}
+
+function diffBadge(cur,prev){
+  if(!prev) return "";
+  const pct=Math.round(((cur-prev)/prev)*100),up=pct>=0;
+  return `<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${up?"rgba(255,107,107,.18)":"rgba(74,222,128,.18)"};color:${up?"#FF6B6B":"#4ADE80"};margin-left:8px">${up?`▲+${pct}%`:`▼${pct}%`}</span>`;
+}
+
+function recordRow(r,catMap){
+  const cat=catMap[r.category]||{emoji:"📦",label:"不明",color:"#888"};
+  return `<div class="rr" style="display:flex;align-items:center;padding:10px 18px;border-top:1px solid rgba(255,255,255,.04);position:relative">
+    <div style="width:32px;height:32px;border-radius:9px;background:${cat.color}22;display:flex;align-items:center;justify-content:center;font-size:15px;margin-right:10px">${cat.emoji}</div>
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:600">${r.note}</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:1px">${cat.label} · ${r.date}</div>
+    </div>
+    <div style="font-size:14px;font-weight:800;color:${cat.color};margin-right:8px">${yen(r.amount)}</div>
+    <button class="del-btn db" onclick="deleteRecord('${r.fid}')">削除</button>
+  </div>`;
+}
+
+// ── Render ─────────────────────────────────────────────────
+function render(){
+  const s=state;
+  const d=derived();
+  const {catMap,todayRecs,todayTotal,monthTotal,remaining,ratio,sc,se,st,allYears,revTotal,prevTotal,monthlyBars,prevMonthlyBars,donutSegs,groupedByDate,allGroupedByDate,curYM,pYear}=d;
+
+  // toast
+  const toastHtml = s.toast ? `<div class="toast">${s.toast}</div>` : "";
+
+  // ── nav ──
+  const navItems=[
+    {id:"home",emoji:"🏠",label:"ホーム"},
+    {id:"add",emoji:"＋",label:"記録",big:true},
+    {id:"review",emoji:"📊",label:"振り返り"},
+    {id:"history",emoji:"📋",label:"履歴"},
+  ];
+  const navHtml=`<nav class="nav">${navItems.map(t=>`
+    <div class="nav-item tb" onclick="setScreen('${t.id}')">
+      <div class="nav-icon ${t.big?"big":s.screen===t.id?"active":""}" style="width:${t.big?"50":"36"}px;height:${t.big?"50":"36"}px">${t.emoji}</div>
+      <div class="nav-label ${s.screen===t.id?"active":""}">${t.label}</div>
+    </div>`).join("")}</nav>`;
+
+  // ── header ──
+  const syncBadge=s.syncing
+    ? `<div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:3px">🔄 同期中...</div>`
+    : `<div style="font-size:10px;color:rgba(74,222,128,.7);margin-top:3px">✓ 同期済み</div>`;
+  const headerHtml=`<div style="width:100%;max-width:440px;padding:28px 22px 0">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-size:22px;font-weight:900;letter-spacing:-.5px">こいん 💰</div>${syncBadge}</div>
+      <div style="background:rgba(255,180,0,.12);border:1px solid rgba(255,180,0,.25);border-radius:12px;padding:8px 14px;text-align:center">
+        <div style="font-size:18px">🔥</div><div style="font-size:11px;color:#FFD700;font-weight:700">毎日記録</div>
+      </div>
+    </div>
+  </div>`;
+
+  let screenHtml="";
+
+  // ══════════ HOME ══════════
+  if(s.screen==="home"){
+    const todayCatBadges=s.categories.filter(c=>todayRecs.some(r=>r.category===c.id)).map(cat=>{
+      const t=todayRecs.filter(r=>r.category===cat.id).reduce((a,r)=>a+r.amount,0);
+      return `<div style="background:${cat.color}20;border:1px solid ${cat.color}40;border-radius:99px;padding:3px 10px;font-size:11px;color:${cat.color};font-weight:600">${cat.emoji} ${yen(t)}</div>`;
+    }).join("");
+    const recentRows=s.records.slice(0,6).map(r=>recordRow(r,catMap)).join("");
+    screenHtml=`<div id="wrap">
+      <div class="card ca" style="padding:22px 22px 18px;animation-delay:.04s">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+          <div>
+            <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px">今月の残り</div>
+            <div style="font-size:36px;font-weight:900;color:${sc};line-height:1">${yen(remaining)}</div>
+          </div>
+          <div style="background:rgba(255,255,255,.06);border-radius:14px;padding:10px 16px;text-align:center">
+            <div style="font-size:22px">${se}</div>
+            <div style="font-size:11px;color:${sc};font-weight:700;margin-top:2px">${st}</div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.08);border-radius:99px;height:8px;overflow:hidden">
+          <div style="height:100%;width:${ratio*100}%;background:linear-gradient(90deg,${sc}88,${sc});border-radius:99px;transition:width .6s ease"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:7px;font-size:11px;color:rgba(255,255,255,.3)">
+          <span>${yen(monthTotal)} 使用済み</span><span>予算 ${yen(BUDGET)}</span>
+        </div>
+      </div>
+      <div class="card ca" style="padding:16px 20px;animation-delay:.08s">
+        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:6px">今日の支出</div>
+        <div style="font-size:28px;font-weight:900">${yen(todayTotal)}</div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${todayCatBadges}</div>
+      </div>
+      <button class="btn-main" onclick="setScreen('add')">＋ 支出を記録する</button>
+      <div class="card ca" style="animation-delay:.12s">
+        <div style="padding:14px 18px 6px;font-size:12px;color:rgba(255,255,255,.4);font-weight:700">最近の記録</div>
+        ${recentRows}
+        <div onclick="setScreen('history')" style="padding:10px 18px;text-align:center;font-size:11px;color:rgba(255,255,255,.3);cursor:pointer">すべての履歴 →</div>
+      </div>
+    </div>`;
+  }
+
+  // ══════════ ADD ══════════
+  else if(s.screen==="add"){
+    const catGrid=s.categories.map(cat=>`
+      <div class="cb" onclick="selCat('${cat.id}')" style="background:${s.selCat===cat.id?cat.color+"30":"rgba(255,255,255,.05)"};border:2px solid ${s.selCat===cat.id?cat.color:"transparent"};border-radius:13px;padding:10px 4px;text-align:center">
+        <div style="font-size:20px">${cat.emoji}</div>
+        <div style="font-size:10px;margin-top:3px;color:${s.selCat===cat.id?cat.color:"rgba(255,255,255,.5)"};font-weight:600">${cat.label}</div>
+      </div>`).join("");
+    const quickBtns=QUICK.map(q=>`
+      <div onclick="setAmt('${q}')" style="background:${s.amount===String(q)?"rgba(102,126,234,.28)":"rgba(255,255,255,.06)"};border:1px solid ${s.amount===String(q)?"#667eea":"rgba(255,255,255,.1)"};border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer;color:${s.amount===String(q)?"#a5b4fc":"rgba(255,255,255,.6)"};transition:all .13s">${yen(q)}</div>`).join("");
+    const pastNote=s.addDate!==today()?`<div style="margin-top:8px;font-size:11px;color:#FFA94D;background:rgba(255,169,77,.1);border-radius:8px;padding:6px 10px">📝 過去の記録として追加します</div>`:"";
+    screenHtml=`<div id="wrap">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button onclick="setScreen('home')" style="background:rgba(255,255,255,.08);border:none;border-radius:10px;width:36px;height:36px;cursor:pointer;color:#fff;font-size:18px">←</button>
+        <div style="font-size:18px;font-weight:900">支出を記録</div>
+      </div>
+      <div class="card ca" style="padding:16px 18px">
+        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:8px">📅 日付（過去の日付もOK）</div>
+        <input class="inp" type="date" value="${s.addDate}" max="${today()}" onchange="setAddDate(this.value)">
+        ${pastNote}
+      </div>
+      <div class="card ca" style="padding:16px 18px;animation-delay:.04s">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-size:11px;color:rgba(255,255,255,.4)">カテゴリ</div>
+          <div onclick="openCatEditor()" style="font-size:11px;color:#a5b4fc;cursor:pointer;font-weight:600">✏️ カテゴリ編集</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${catGrid}</div>
+      </div>
+      <div class="card ca" style="padding:16px 18px;animation-delay:.08s">
+        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px">金額</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${quickBtns}</div>
+        <div style="position:relative">
+          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;color:rgba(255,255,255,.35);font-weight:700">¥</span>
+          <input class="inp" type="number" placeholder="金額を入力" value="${s.amount}" oninput="setAmount(this.value)" style="padding-left:34px;font-size:20px;font-weight:900">
+        </div>
+      </div>
+      <div class="card ca" style="padding:16px 18px;animation-delay:.12s">
+        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:8px">メモ（任意）</div>
+        <input class="inp" placeholder="例：ランチ、コンビニ..." value="${s.note}" oninput="setNote(this.value)">
+      </div>
+      <button class="btn-add" onclick="addRecord()" ${!s.selCat||!s.amount?"disabled":""}>記録する</button>
+      <div style="font-size:11px;text-align:center;color:rgba(255,255,255,.2)">細かい金額は気にしなくてOK 👍</div>
+    </div>`;
+  }
+
+  // ══════════ REVIEW ══════════
+  else if(s.screen==="review"){
+    const yearBtns=(allYears.length>0?allYears:[new Date().getFullYear()]).map(y=>
+      `<div class="pill ${s.reviewYear===y?"active":""}" onclick="setReviewYear(${y})">${y}年</div>`).join("");
+    const monthBtns=MONTHS.map((ml,i)=>{
+      const hasData=s.records.some(r=>toYM(r.date)===`${s.reviewYear}-${String(i+1).padStart(2,"0")}`);
+      return `<div class="pill ${s.reviewMonth===i+1&&s.reviewMode==="month"?"active":""} ${hasData?"":"disabled"}" onclick="${hasData?`setReviewMonth(${i+1})`:""}">${ml}</div>`;
+    }).join("");
+    const modeHtml=`<div style="display:flex;gap:8px;margin-bottom:16px">
+      <div class="pill ${s.reviewMode==="month"?"active":""}" onclick="setReviewMode('month')" style="flex:1;text-align:center;font-size:13px;padding:9px 0">月別</div>
+      <div class="pill ${s.reviewMode==="year"?"active":""}" onclick="setReviewMode('year')" style="flex:1;text-align:center;font-size:13px;padding:9px 0">年別</div>
+    </div>`;
+    const monthGridHtml=s.reviewMode==="month"?`
+      <div style="margin-top:12px">
+        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:8px">月を選択</div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:5px">${monthBtns}</div>
+      </div>`:"";
+    const revTitle=s.reviewMode==="month"?`${s.reviewYear}年 ${s.reviewMonth}月`:`${s.reviewYear}年`;
+    const summaryExtra=revTotal>0&&prevTotal>0?`<div style="font-size:12px;color:rgba(255,255,255,.35);margin-top:4px">前年同期：${yen(prevTotal)}　差額：<span style="color:${revTotal>prevTotal?"#FF6B6B":"#4ADE80"};font-weight:700">${revTotal>prevTotal?"+":""}${yen(revTotal-prevTotal)}</span></div>`:"";
+    const yoyToggle=`<div onclick="toggleYoY()" style="font-size:11px;font-weight:700;cursor:pointer;padding:4px 10px;border-radius:8px;background:${s.showYoY?"rgba(102,126,234,.25)":"rgba(255,255,255,.06)"};border:1px solid ${s.showYoY?"#667eea":"rgba(255,255,255,.1)"};color:${s.showYoY?"#a5b4fc":"rgba(255,255,255,.45)"}">前年比較 ${s.showYoY?"ON":"OFF"}</div>`;
+    const yoyLegend=s.showYoY?`<div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:rgba(255,255,255,.35)"><span>■ <span style="color:#667eea">${s.reviewYear}年</span></span><span>■ <span style="color:rgba(255,255,255,.4)">${pYear}年</span></span></div>`:"";
+
+    // yoy table
+    let yoyTableHtml="";
+    if(s.reviewMode==="year"&&s.showYoY){
+      const rows=MONTHS.map((_,mi)=>{
+        const ym=`${s.reviewYear}-${String(mi+1).padStart(2,"0")}`,pym=`${pYear}-${String(mi+1).padStart(2,"0")}`;
+        const cur=s.records.filter(r=>toYM(r.date)===ym).reduce((a,r)=>a+r.amount,0);
+        const prv=s.records.filter(r=>toYM(r.date)===pym).reduce((a,r)=>a+r.amount,0);
+        if(!cur&&!prv) return "";
+        const diff=cur-prv;
+        return `<div style="font-size:11px;padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.05);color:rgba(255,255,255,.55)">${mi+1}月</div>
+        <div style="font-size:11px;padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.05);color:rgba(255,255,255,.45)">${prv?yen(prv):"—"}</div>
+        <div style="font-size:11px;padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.05);font-weight:700">${cur?yen(cur):"—"}</div>
+        <div style="font-size:11px;padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.05);color:${diff>0?"#FF6B6B":diff<0?"#4ADE80":"rgba(255,255,255,.3)"};font-weight:700">${prv&&cur?(diff>0?"+":"")+yen(diff):"—"}</div>`;
+      }).join("");
+      yoyTableHtml=`<div class="card ca" style="padding:18px 20px">
+        <div class="section-label" style="margin-bottom:14px">${pYear}年 vs ${s.reviewYear}年 月別比較</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr">
+          ${["月","前年","今年","差"].map(h=>`<div style="font-size:10px;color:rgba(255,255,255,.3);padding:4px 8px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.08)">${h}</div>`).join("")}
+          ${rows}
+        </div>
+      </div>`;
+    }
+
+    // weekly bars
+    let weeklyHtml="";
+    if(s.reviewMode==="month"){
+      const [y,m]=`${s.reviewYear}-${String(s.reviewMonth).padStart(2,"0")}`.split("-").map(Number);
+      const days=new Date(y,m,0).getDate(),map={};
+      d.revRecs.forEach(r=>{const dd=parseInt(r.date.slice(8));map[dd]=(map[dd]||0)+r.amount;});
+      const wBars=Array.from({length:Math.ceil(days/7)},(_,w)=>{
+        const st2=w*7+1,en=Math.min(st2+6,days);
+        return {label:`${st2}~${en}日`,value:Object.entries(map).filter(([dd])=>+dd>=st2&&+dd<=en).reduce((a,[,v])=>a+v,0),highlight:true};
+      });
+      weeklyHtml=`<div class="card ca" style="padding:18px 20px">
+        <div class="section-label" style="margin-bottom:12px">週別支出</div>
+        ${barChart(wBars,"#F783AC",null,64)}
+      </div>`;
+    }
+
+    // donut + bars
+    const donutHtml=donutSegs.length>0?`
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+        ${donut(donutSegs)}
+        <div style="flex:1;display:flex;flex-direction:column;gap:7px;min-width:120px">
+          ${donutSegs.map(seg=>`<div style="display:flex;align-items:center;gap:8px">
+            <div style="width:9px;height:9px;border-radius:50%;background:${seg.color};flex-shrink:0"></div>
+            <div style="flex:1;font-size:12px">${seg.label}</div>
+            <div style="font-size:12px;font-weight:700;color:${seg.color}">${yen(seg.value)}</div>
+          </div>`).join("")}
+        </div>
+      </div>
+      ${donutSegs.map(seg=>{
+        const pct=revTotal>0?seg.value/revTotal:0;
+        return `<div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px">
+            <span>${s.categories.find(c=>c.id===seg.catId)?.emoji||""} ${seg.label}</span>
+            <div style="display:flex;align-items:center"><span style="font-weight:700;color:${seg.color}">${yen(seg.value)}</span>${diffBadge(seg.value,seg.prevValue)}</div>
+          </div>
+          <div style="background:rgba(255,255,255,.07);border-radius:99px;height:6px">
+            <div style="height:100%;width:${pct*100}%;background:${seg.color};border-radius:99px;transition:width .6s"></div>
+          </div>
+          <div style="font-size:9px;color:rgba(255,255,255,.25);margin-top:2px">${Math.round(pct*100)}%</div>
+        </div>`;
+      }).join("")}`:`<div style="font-size:13px;color:rgba(255,255,255,.3);padding:20px 0;text-align:center">この期間の記録がありません</div>`;
+
+    const groupedRows=groupedByDate.map(([date,recs])=>`
+      <div class="date-group-header">${date}　合計 ${yen(recs.reduce((s,r)=>s+r.amount,0))}</div>
+      ${recs.map(r=>recordRow(r,catMap)).join("")}`).join("");
+
+    screenHtml=`<div id="wrap">
+      <div style="font-size:18px;font-weight:900">📊 振り返り</div>
+      <div class="card ca" style="padding:16px 18px">
+        ${modeHtml}
+        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:8px">年を選択</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${yearBtns}</div>
+        ${monthGridHtml}
+      </div>
+      <div class="card ca" style="padding:20px 22px;animation-delay:.04s">
+        <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:4px">${revTitle} の合計</div>
+        <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+          <div style="font-size:34px;font-weight:900;color:#a5b4fc">${yen(revTotal)}</div>
+          ${diffBadge(revTotal,prevTotal)}
+        </div>
+        ${summaryExtra}
+      </div>
+      <div class="card ca" style="padding:18px 20px;animation-delay:.07s">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="section-label">${s.reviewYear}年 月別支出</div>
+          ${yoyToggle}
+        </div>
+        ${barChart(monthlyBars,s.showYoY?prevMonthlyBars:null,"#667eea",null,72)}
+        ${yoyLegend}
+      </div>
+      ${yoyTableHtml}
+      ${weeklyHtml}
+      <div class="card ca" style="padding:18px 20px;animation-delay:.12s">
+        <div class="section-label" style="margin-bottom:14px">カテゴリ別</div>
+        ${donutHtml}
+      </div>
+      ${groupedRows.length?`<div class="card ca" style="animation-delay:.14s">
+        <div style="padding:14px 18px 6px;font-size:12px;color:rgba(255,255,255,.4);font-weight:700">日別記録（${d.revRecs.length}件）</div>
+        ${groupedRows}
+      </div>`:""}
+    </div>`;
+  }
+
+  // ══════════ HISTORY ══════════
+  else if(s.screen==="history"){
+    const allRows=allGroupedByDate.map(([date,recs])=>`
+      <div class="date-group-header">${date}　合計 ${yen(recs.reduce((s,r)=>s+r.amount,0))}</div>
+      ${recs.map(r=>recordRow(r,catMap)).join("")}`).join("");
+    screenHtml=`<div id="wrap">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button onclick="setScreen('home')" style="background:rgba(255,255,255,.08);border:none;border-radius:10px;width:36px;height:36px;cursor:pointer;color:#fff;font-size:18px">←</button>
+        <div style="font-size:18px;font-weight:900">すべての履歴</div>
+      </div>
+      <div class="card ca">${allRows||`<div style="padding:40px;text-align:center;color:rgba(255,255,255,.3)">記録がまだありません</div>`}</div>
+    </div>`;
+  }
+
+  // ── cat editor modal ──
+  const catEditorHtml=s.showCatEditor?`<div class="modal-bg" onclick="closeCatEditor()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div style="font-size:16px;font-weight:900;margin-bottom:4px">カテゴリを編集</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:18px">追加・削除ができます</div>
+      <div style="margin-bottom:20px">
+        ${s.categories.map(cat=>`
+          <div style="display:flex;align-items:center;padding:10px 12px;background:rgba(255,255,255,.05);border-radius:12px;margin-bottom:6px;border:1px solid rgba(255,255,255,.07)">
+            <span style="font-size:20px;margin-right:10px">${cat.emoji}</span>
+            <div style="flex:1"><div style="font-size:14px;font-weight:600">${cat.label}</div></div>
+            <div style="width:12px;height:12px;border-radius:50%;background:${cat.color};margin-right:12px"></div>
+            <button class="del-btn" onclick="deleteCategory('${cat.id}')" ${s.deletingCatId===cat.id?"disabled":""}>${s.deletingCatId===cat.id?"削除中...":"削除"}</button>
+          </div>`).join("")}
+      </div>
+      <div style="height:1px;background:rgba(255,255,255,.08);margin-bottom:18px"></div>
+      <div style="font-size:14px;font-weight:700;margin-bottom:14px">＋ 新しいカテゴリを追加</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:8px">絵文字</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        ${PRESET_EMOJIS.map(e=>`<div onclick="setNewEmoji('${e}')" style="font-size:22px;cursor:pointer;padding:6px;border-radius:10px;background:${s.newEmoji===e?"rgba(102,126,234,.25)":"rgba(255,255,255,.05)"};border:1px solid ${s.newEmoji===e?"#667eea":"transparent"}">${e}</div>`).join("")}
+      </div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:8px">カテゴリ名</div>
+      <input class="inp" placeholder="例：美容、ペット..." value="${s.newLabel}" oninput="setNewLabel(this.value)" style="margin-bottom:14px">
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:8px">カラー</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+        ${PRESET_COLORS.map(c=>`<div onclick="setNewColor('${c}')" style="width:28px;height:28px;border-radius:50%;background:${c};cursor:pointer;border:3px solid ${s.newColor===c?"white":"transparent"};box-sizing:border-box;transition:border .1s"></div>`).join("")}
+      </div>
+      <button onclick="addCategory()" ${!s.newLabel.trim()?"disabled":""} style="background:${s.newLabel.trim()?"linear-gradient(135deg,#667eea,#764ba2)":"rgba(255,255,255,.07)"};border:none;border-radius:14px;padding:16px;cursor:${s.newLabel.trim()?"pointer":"not-allowed"};color:${s.newLabel.trim()?"#fff":"rgba(255,255,255,.25)"};font-size:15px;font-weight:800;width:100%">追加する</button>
+    </div>
+  </div>`:"";
+
+  document.getElementById("root").innerHTML=`
+    ${toastHtml}
+    ${headerHtml}
+    <div style="width:100%;max-width:440px;padding:16px 22px;display:flex;flex-direction:column;gap:14px">
+      ${screenHtml}
+    </div>
+    ${catEditorHtml}
+    ${navHtml}
+  `;
+}
+
+// ── Global handlers（HTMLからonclick経由で呼ぶ） ────────────
+window.setScreen      = s => setState({screen:s});
+window.selCat         = id => setState({selCat:id});
+window.setAmt         = v => setState({amount:String(v)});
+window.setAmount      = v => setState({amount:v});
+window.setNote        = v => setState({note:v});
+window.setAddDate     = v => setState({addDate:v});
+window.addRecord      = addRecord;
+window.deleteRecord   = deleteRecord;
+window.openCatEditor  = () => setState({showCatEditor:true});
+window.closeCatEditor = () => setState({showCatEditor:false});
+window.addCategory    = addCategory;
+window.deleteCategory = deleteCategory;
+window.setNewEmoji    = v => setState({newEmoji:v});
+window.setNewLabel    = v => setState({newLabel:v});
+window.setNewColor    = v => setState({newColor:v});
+window.setReviewMode  = v => setState({reviewMode:v});
+window.setReviewYear  = v => setState({reviewYear:v});
+window.setReviewMonth = v => setState({reviewMonth:v});
+window.toggleYoY      = () => setState({showYoY:!state.showYoY});
+
+render();
+</script>
+</body>
+</html>
