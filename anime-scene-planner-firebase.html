@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>コマ割りメモ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;700&family=JetBrains+Mono:wght@300;400&display=swap');
+
+  :root {
+    --bg: #0e0e10;
+    --surface: #18181c;
+    --surface2: #222228;
+    --border: #2e2e38;
+    --accent: #c8f04a;
+    --accent2: #4af0c8;
+    --text: #e8e8f0;
+    --muted: #666678;
+    --danger: #f04a4a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    min-height: 100vh;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  body.ready { opacity: 1; }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.5;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header h1 { font-size: 13px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .sync-badge {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    transition: all 0.3s;
+  }
+  .sync-badge.synced { color: var(--accent2); border-color: var(--accent2); }
+  .sync-badge.saving { color: var(--accent); border-color: var(--accent); }
+
+  /* ── PROJECT BAR ── */
+  .project-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .project-bar::-webkit-scrollbar { display: none; }
+
+  .project-tab {
+    flex-shrink: 0;
+    padding: 10px 16px;
+    font-size: 12px;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+  .project-tab:hover { color: var(--text); }
+  .project-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .project-tab .tab-count {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--surface2);
+    padding: 1px 5px;
+    border-radius: 8px;
+  }
+  .project-tab .tab-del {
+    opacity: 0;
+    font-size: 11px;
+    color: var(--muted);
+    padding: 1px 3px;
+    border-radius: 3px;
+    transition: all 0.15s;
+  }
+  .project-tab:hover .tab-del { opacity: 1; }
+  .project-tab .tab-del:hover { color: var(--danger); background: rgba(240,74,74,0.1); }
+
+  .btn-new-project {
+    flex-shrink: 0;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    transition: color 0.15s;
+    white-space: nowrap;
+  }
+  .btn-new-project:hover { color: var(--accent); }
+
+  /* ── PROJECT NAME EDITOR ── */
+  .project-name-bar {
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .project-name-input {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 18px;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-weight: 700;
+    outline: none;
+    flex: 1;
+    min-width: 0;
+  }
+  .project-name-input::placeholder { color: var(--muted); font-weight: 400; }
+  .project-desc-input {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    outline: none;
+    flex: 2;
+    min-width: 0;
+  }
+  .project-desc-input::placeholder { color: #444; }
+
+  /* ── AUDIO ZONE ── */
+  .audio-zone {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .upload-area {
+    border: 1.5px dashed var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .upload-area:hover, .upload-area.dragover { border-color: var(--accent); background: rgba(200,240,74,0.04); }
+  .upload-area input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+  .upload-area p { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .upload-area strong { color: var(--accent); }
+
+  .player-area { display: none; }
+  .player-area.active { display: block; }
+
+  .track-info { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .track-name { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--accent2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .time-display { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--muted); }
+
+  .controls { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+
+  .btn {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 6px; padding: 6px 12px; font-size: 11px;
+    font-family: 'Zen Kaku Gothic New', sans-serif; cursor: pointer; transition: all 0.15s;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.small { padding: 4px 9px; font-size: 11px; }
+  .btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+  .play-btn {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--accent); color: #0e0e10; border: none;
+    cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s;
+  }
+  .play-btn:hover { background: #d4f560; transform: scale(1.05); }
+
+  .mark-btn {
+    background: transparent; border: 1px solid var(--accent2); color: var(--accent2);
+    border-radius: 6px; padding: 6px 12px; font-size: 11px;
+    font-family: 'Zen Kaku Gothic New', sans-serif; cursor: pointer; transition: all 0.15s;
+  }
+  .mark-btn:hover { background: rgba(74,240,200,0.1); }
+
+  .speed-select {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 4px; padding: 3px 7px; font-size: 11px;
+    font-family: 'Zen Kaku Gothic New', sans-serif; outline: none; cursor: pointer;
+  }
+
+  .timeline-wrap {
+    position: relative; background: #1c1c24; border-radius: 6px;
+    height: 52px; overflow: hidden; cursor: pointer;
+  }
+  canvas#waveform { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .progress-bar { position: absolute; top: 0; left: 0; bottom: 0; background: rgba(200,240,74,0.1); pointer-events: none; }
+  .progress-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; box-shadow: 0 0 8px var(--accent); }
+  .pin-marker { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent2); pointer-events: none; opacity: 0.7; }
+  .pin-marker::after { content: ''; position: absolute; top: 2px; left: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); }
+
+  /* ── MAIN LAYOUT ── */
+  .main-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    height: calc(100vh - 185px);
+    overflow: hidden;
+  }
+
+  @media (max-width: 700px) {
+    .main-layout { grid-template-columns: 1fr; height: auto; overflow: visible; }
+    .side-panel { border-left: none; border-top: 1px solid var(--border); }
+  }
+
+  /* ── SCENES ── */
+  .scenes-panel { padding: 16px 20px; overflow-y: auto; }
+  .scenes-panel::-webkit-scrollbar { width: 4px; }
+  .scenes-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .panel-label { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  .scene-count { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--accent); }
+
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+  .empty-state .big { font-size: 36px; margin-bottom: 10px; }
+  .empty-state p { font-size: 12px; line-height: 1.9; }
+
+  .scene-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 7px; overflow: hidden;
+    transition: border-color 0.15s; animation: slideIn 0.2s ease;
+  }
+  .scene-card:hover { border-color: var(--accent2); }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
+
+  .scene-card-header { display: flex; align-items: center; gap: 8px; padding: 9px 11px; }
+  .scene-num { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--muted); min-width: 22px; }
+  .scene-time {
+    font-size: 11px; font-family: 'JetBrains Mono', monospace;
+    background: var(--surface2); color: var(--accent2);
+    padding: 2px 7px; border-radius: 4px; cursor: pointer;
+    border: 1px solid transparent; transition: all 0.15s; white-space: nowrap;
+  }
+  .scene-time:hover { border-color: var(--accent2); }
+  .scene-title-input {
+    flex: 1; background: transparent; border: none; color: var(--text);
+    font-size: 12px; font-family: 'Zen Kaku Gothic New', sans-serif;
+    outline: none; font-weight: 700; min-width: 0;
+  }
+  .scene-title-input::placeholder { color: var(--muted); font-weight: 400; }
+  .scene-delete { background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 13px; padding: 2px 4px; border-radius: 3px; transition: all 0.15s; opacity: 0; }
+  .scene-card:hover .scene-delete { opacity: 1; }
+  .scene-delete:hover { color: var(--danger); background: rgba(240,74,74,0.1); }
+
+  .scene-body { padding: 0 11px 10px; }
+  .scene-memo-input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 5px; color: var(--text); font-size: 11px;
+    font-family: 'Zen Kaku Gothic New', sans-serif; padding: 7px 9px;
+    resize: none; outline: none; line-height: 1.6; transition: border-color 0.15s; min-height: 48px;
+  }
+  .scene-memo-input:focus { border-color: var(--accent2); }
+  .scene-memo-input::placeholder { color: var(--muted); }
+
+  .scene-tags { display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap; }
+  .tag { font-size: 10px; padding: 2px 7px; border-radius: 20px; border: 1px solid; cursor: pointer; transition: all 0.15s; }
+  .tag.action   { color: #f09a4a; border-color: rgba(240,154,74,0.4); }
+  .tag.calm     { color: #4ab0f0; border-color: rgba(74,176,240,0.4); }
+  .tag.dramatic { color: #c84af0; border-color: rgba(200,74,240,0.4); }
+  .tag.cut      { color: #f04a7a; border-color: rgba(240,74,122,0.4); }
+  .tag.loop     { color: #4af0c8; border-color: rgba(74,240,200,0.4); }
+  .tag.selected.action   { background: rgba(240,154,74,0.2); }
+  .tag.selected.calm     { background: rgba(74,176,240,0.2); }
+  .tag.selected.dramatic { background: rgba(200,74,240,0.2); }
+  .tag.selected.cut      { background: rgba(240,74,122,0.2); }
+  .tag.selected.loop     { background: rgba(74,240,200,0.2); }
+
+  /* ── SIDE PANEL ── */
+  .side-panel { padding: 16px; overflow-y: auto; border-left: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; }
+  .side-section { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+  .side-title { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 9px; }
+
+  .progress-ring-wrap { display: flex; align-items: center; gap: 12px; }
+  .ring-text { font-size: 11px; color: var(--muted); line-height: 1.7; }
+  .ring-num { font-size: 20px; font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 300; }
+  .progress-bar-simple { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 5px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width 0.4s ease; }
+
+  .export-options { display: flex; flex-direction: column; gap: 7px; }
+
+  .kb-hint { font-size: 10px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
+  .kb-hint kbd { background: var(--surface2); border: 1px solid var(--border); border-radius: 3px; padding: 1px 5px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px; width: 360px; max-width: 90vw;
+    transform: translateY(10px); transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal h3 { font-size: 14px; margin-bottom: 14px; color: var(--accent); }
+  .modal input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-size: 13px;
+    font-family: 'Zen Kaku Gothic New', sans-serif; padding: 9px 12px;
+    outline: none; margin-bottom: 8px;
+  }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+
+  /* no-project state */
+  .no-project {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 300px; gap: 16px; color: var(--muted);
+  }
+  .no-project .big { font-size: 48px; }
+  .no-project p { font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>コマ割りメモ</h1>
+  <span class="sync-badge" id="syncBadge">● 接続中…</span>
+</header>
+
+<!-- PROJECT BAR -->
+<div class="project-bar" id="projectBar">
+  <button class="btn-new-project" id="btnNewProject">＋ 新規プロジェクト</button>
+</div>
+
+<!-- PROJECT NAME BAR -->
+<div class="project-name-bar" id="projectNameBar" style="display:none">
+  <input class="project-name-input" id="projectNameInput" placeholder="プロジェクト名（例：〇〇さん配信切り抜き #3）" maxlength="60">
+  <input class="project-desc-input" id="projectDescInput" placeholder="メモ（任意）" maxlength="100">
+</div>
+
+<!-- AUDIO ZONE -->
+<div class="audio-zone" id="audioZone" style="display:none">
+  <div class="upload-area" id="uploadArea">
+    <input type="file" id="audioInput" accept="audio/*">
+    <p><strong>🎵 音源ファイルをドロップ</strong>またはクリックして選択（MP3 / WAV / OGG）</p>
+    <p style="margin-top:4px;font-size:11px;color:#444">※音源はこのデバイスのみで使用。シーンメモだけクラウドに保存されます。</p>
+  </div>
+  <div class="player-area" id="playerArea">
+    <div class="track-info">
+      <span class="track-name" id="trackName">—</span>
+      <select class="speed-select" id="speedSelect">
+        <option value="0.5">0.5×</option>
+        <option value="0.75">0.75×</option>
+        <option value="1" selected>1×</option>
+        <option value="1.25">1.25×</option>
+      </select>
+      <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
+    </div>
+    <div class="controls">
+      <button class="play-btn" id="playBtn">▶</button>
+      <button class="btn small" id="rewind5">◀ 5s</button>
+      <button class="btn small" id="forward5">5s ▶</button>
+      <button class="mark-btn" id="markBtn">＋ シーンをここに追加 <span style="font-size:10px;opacity:0.6">[M]</span></button>
+      <button class="btn small danger" id="changeFile" style="margin-left:auto">ファイル変更</button>
+    </div>
+    <div class="timeline-wrap" id="timelineWrap">
+      <canvas id="waveform"></canvas>
+      <div class="progress-bar" id="progressBar"></div>
+      <div class="progress-line" id="progressLine"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-layout" id="mainLayout" style="display:none">
+  <div class="scenes-panel">
+    <div class="panel-header">
+      <span class="panel-label">シーン一覧</span>
+      <span class="scene-count" id="sceneCount">0 シーン</span>
+    </div>
+    <div id="emptyState" class="empty-state">
+      <div class="big">🎬</div>
+      <p>音源を読み込んで再生しながら<br><strong style="color:var(--accent2)">「＋ シーンをここに追加」</strong>を押すと<br>タイムスタンプ付きでメモできます<br><br>音源なしでもメモだけ追加できます</p>
+    </div>
+    <div id="sceneList"></div>
+    <button class="btn" id="addSceneManual" style="width:100%;margin-top:8px;display:none">＋ タイムスタンプなしでシーン追加</button>
+  </div>
+
+  <div class="side-panel">
+    <div class="side-section">
+      <div class="side-title">進捗</div>
+      <div class="progress-ring-wrap">
+        <svg width="52" height="52" viewBox="0 0 52 52">
+          <circle cx="26" cy="26" r="20" fill="none" stroke="var(--border)" stroke-width="4"/>
+          <circle id="ringCircle" cx="26" cy="26" r="20" fill="none" stroke="var(--accent)" stroke-width="4"
+            stroke-dasharray="125.6" stroke-dashoffset="125.6"
+            stroke-linecap="round" transform="rotate(-90 26 26)"
+            style="transition:stroke-dashoffset 0.4s ease"/>
+        </svg>
+        <div>
+          <div class="ring-num" id="ringNum">0</div>
+          <div class="ring-text">シーン設計済み<br><span id="todayMsg" style="color:var(--muted)">—</span></div>
+        </div>
+      </div>
+      <div class="progress-bar-simple"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+
+    <div class="side-section">
+      <div class="side-title">ショートカット</div>
+      <div class="kb-hint">
+        <span><kbd>Space</kbd> 再生/停止</span>
+        <span><kbd>M</kbd> シーン追加</span>
+        <span><kbd>←</kbd><kbd>→</kbd> 5秒移動</span>
+      </div>
+    </div>
+
+    <div class="side-section">
+      <div class="side-title">エクスポート</div>
+      <div class="export-options">
+        <button class="btn" id="exportTxt">📄 テキストでコピー</button>
+        <button class="btn" id="exportJson">💾 JSONダウンロード</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NO PROJECT STATE -->
+<div class="no-project" id="noProjectState">
+  <div class="big">🎞</div>
+  <p>プロジェクトを作成して始めましょう</p>
+  <button class="btn" id="btnNoProjectNew">＋ 新規プロジェクト</button>
+</div>
+
+<!-- MODAL: new project -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>🎬 新規プロジェクト</h3>
+    <input type="text" id="modalNameInput" placeholder="プロジェクト名（例：〇〇さん配信 2024/06）" maxlength="60">
+    <input type="text" id="modalDescInput" placeholder="メモ（任意）" maxlength="100">
+    <div class="modal-btns">
+      <button class="btn" id="modalCancel">キャンセル</button>
+      <button class="btn" id="modalCreate" style="border-color:var(--accent);color:var(--accent)">作成</button>
+    </div>
+  </div>
+</div>
+
+<audio id="audioEl" style="display:none"></audio>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, getDocs }
+  from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBEE451bCNLV-Ty337LyZryFlZqqiN4mxo",
+  authDomain: "moonboard-27ebf.firebaseapp.com",
+  projectId: "moonboard-27ebf",
+  storageBucket: "moonboard-27ebf.firebasestorage.app",
+  messagingSenderId: "437383444283",
+  appId: "1:437383444283:web:f2fab00c5e190b2ca9291e"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── State ──
+let projects = {};   // { id: { name, desc, scenes:[] } }
+let activeId = null;
+let saveTimer = null;
+
+const syncBadge      = document.getElementById('syncBadge');
+const projectBar     = document.getElementById('projectBar');
+const btnNewProject  = document.getElementById('btnNewProject');
+const projectNameBar = document.getElementById('projectNameBar');
+const projectNameInput = document.getElementById('projectNameInput');
+const projectDescInput = document.getElementById('projectDescInput');
+const audioZone      = document.getElementById('audioZone');
+const mainLayout     = document.getElementById('mainLayout');
+const noProjectState = document.getElementById('noProjectState');
+const sceneList      = document.getElementById('sceneList');
+const sceneCountEl   = document.getElementById('sceneCount');
+const emptyState     = document.getElementById('emptyState');
+const addSceneManual = document.getElementById('addSceneManual');
+const ringCircle     = document.getElementById('ringCircle');
+const ringNum        = document.getElementById('ringNum');
+const todayMsg       = document.getElementById('todayMsg');
+const progressFill   = document.getElementById('progressFill');
+const audioEl        = document.getElementById('audioEl');
+const playBtn        = document.getElementById('playBtn');
+const timeDisplay    = document.getElementById('timeDisplay');
+const progressBar    = document.getElementById('progressBar');
+const progressLine   = document.getElementById('progressLine');
+const timelineWrap   = document.getElementById('timelineWrap');
+const trackNameEl    = document.getElementById('trackName');
+const uploadArea     = document.getElementById('uploadArea');
+const playerArea     = document.getElementById('playerArea');
+const modalOverlay   = document.getElementById('modalOverlay');
+const modalNameInput = document.getElementById('modalNameInput');
+const modalDescInput = document.getElementById('modalDescInput');
+
+// ── Firebase listener ──
+const colRef = collection(db, 'anime-projects');
+
+onSnapshot(colRef, snap => {
+  const incoming = {};
+  snap.forEach(d => { incoming[d.id] = d.data(); });
+
+  // merge: preserve local scenes array reference if not changed
+  Object.keys(incoming).forEach(id => {
+    if (!projects[id]) projects[id] = incoming[id];
+    else {
+      projects[id].name = incoming[id].name;
+      projects[id].desc = incoming[id].desc;
+      // only overwrite scenes if no active editing
+      if (id !== activeId) projects[id].scenes = incoming[id].scenes || [];
+    }
+  });
+  // remove deleted
+  Object.keys(projects).forEach(id => { if(!incoming[id]) delete projects[id]; });
+
+  renderTabs();
+  if (activeId && !projects[activeId]) { activeId = null; showNoProject(); }
+  else if (activeId) renderScenes();
+
+  setSyncBadge('synced');
+  document.body.classList.add('ready');
+}, err => {
+  setSyncBadge('error');
+  document.body.classList.add('ready');
+});
+
+function setSyncBadge(state) {
+  syncBadge.className = 'sync-badge ' + (state === 'synced' ? 'synced' : state === 'saving' ? 'saving' : '');
+  syncBadge.textContent = state === 'synced' ? '● 同期済み' : state === 'saving' ? '● 保存中…' : '● エラー';
+}
+
+async function saveProject(id) {
+  if (!projects[id]) return;
+  setSyncBadge('saving');
+  try {
+    await setDoc(doc(db, 'anime-projects', id), projects[id]);
+    setSyncBadge('synced');
+  } catch(e) { setSyncBadge('error'); }
+}
+
+function scheduleSave(id) {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => saveProject(id), 800);
+}
+
+// ── Project CRUD ──
+function createProject(name, desc) {
+  const id = 'proj-' + Date.now();
+  projects[id] = { name: name || '無題プロジェクト', desc: desc || '', scenes: [] };
+  saveProject(id);
+  renderTabs();
+  switchProject(id);
+}
+
+function deleteProject(id) {
+  if (!confirm(`「${projects[id]?.name}」を削除しますか？`)) return;
+  delete projects[id];
+  deleteDoc(doc(db, 'anime-projects', id));
+  if (activeId === id) {
+    activeId = null;
+    const remaining = Object.keys(projects);
+    if (remaining.length) switchProject(remaining[0]);
+    else showNoProject();
+  }
+  renderTabs();
+}
+
+function switchProject(id) {
+  activeId = id;
+  renderTabs();
+  const p = projects[id];
+  projectNameInput.value = p.name;
+  projectDescInput.value = p.desc || '';
+  projectNameBar.style.display = '';
+  audioZone.style.display = '';
+  mainLayout.style.display = '';
+  noProjectState.style.display = 'none';
+  renderScenes();
+  updateProgress();
+}
+
+function showNoProject() {
+  projectNameBar.style.display = 'none';
+  audioZone.style.display = 'none';
+  mainLayout.style.display = 'none';
+  noProjectState.style.display = '';
+}
+
+// ── Tabs ──
+function renderTabs() {
+  // clear all tabs
+  projectBar.querySelectorAll('.project-tab').forEach(t => t.remove());
+  const ids = Object.keys(projects);
+  ids.forEach(id => {
+    const p = projects[id];
+    const tab = document.createElement('div');
+    tab.className = 'project-tab' + (id === activeId ? ' active' : '');
+    const count = (p.scenes || []).length;
+    tab.innerHTML = `<span class="tab-name">${escHtml(p.name)}</span><span class="tab-count">${count}</span><span class="tab-del" data-del="${id}">✕</span>`;
+    tab.addEventListener('click', e => {
+      if (e.target.dataset.del) { deleteProject(e.target.dataset.del); return; }
+      switchProject(id);
+    });
+    projectBar.insertBefore(tab, btnNewProject);
+  });
+  if (!ids.length && !activeId) showNoProject();
+}
+
+// ── Project name editing ──
+projectNameInput.addEventListener('input', () => {
+  if (!activeId) return;
+  projects[activeId].name = projectNameInput.value;
+  renderTabs();
+  scheduleSave(activeId);
+});
+projectDescInput.addEventListener('input', () => {
+  if (!activeId) return;
+  projects[activeId].desc = projectDescInput.value;
+  scheduleSave(activeId);
+});
+
+// ── Modal ──
+function openModal() {
+  modalNameInput.value = ''; modalDescInput.value = '';
+  modalOverlay.classList.add('open');
+  setTimeout(() => modalNameInput.focus(), 100);
+}
+function closeModal() { modalOverlay.classList.remove('open'); }
+
+btnNewProject.addEventListener('click', openModal);
+document.getElementById('btnNoProjectNew').addEventListener('click', openModal);
+document.getElementById('modalCancel').addEventListener('click', closeModal);
+document.getElementById('modalCreate').addEventListener('click', () => {
+  createProject(modalNameInput.value.trim(), modalDescInput.value.trim());
+  closeModal();
+});
+modalNameInput.addEventListener('keydown', e => { if(e.key === 'Enter') document.getElementById('modalCreate').click(); });
+modalOverlay.addEventListener('click', e => { if(e.target === modalOverlay) closeModal(); });
+
+// ── Audio ──
+document.getElementById('audioInput').addEventListener('change', e => { if(e.target.files[0]) loadAudio(e.target.files[0]); });
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault(); uploadArea.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if(f && f.type.startsWith('audio/')) loadAudio(f);
+});
+
+function loadAudio(file) {
+  audioEl.src = URL.createObjectURL(file);
+  trackNameEl.textContent = file.name;
+  uploadArea.style.display = 'none';
+  playerArea.classList.add('active');
+  addSceneManual.style.display = 'none';
+  audioEl.load();
+  drawWaveform(file);
+}
+
+document.getElementById('changeFile').addEventListener('click', () => {
+  audioEl.pause(); playBtn.textContent = '▶';
+  uploadArea.style.display = '';
+  playerArea.classList.remove('active');
+  addSceneManual.style.display = '';
+  clearPins();
+});
+
+playBtn.addEventListener('click', togglePlay);
+document.getElementById('rewind5').addEventListener('click', () => { audioEl.currentTime = Math.max(0, audioEl.currentTime-5); });
+document.getElementById('forward5').addEventListener('click', () => { audioEl.currentTime = Math.min(audioEl.duration||0, audioEl.currentTime+5); });
+document.getElementById('speedSelect').addEventListener('change', e => { audioEl.playbackRate = parseFloat(e.target.value); });
+document.getElementById('markBtn').addEventListener('click', addScene);
+addSceneManual.addEventListener('click', () => addScene(true));
+
+function togglePlay() {
+  if(audioEl.paused) { audioEl.play(); playBtn.textContent = '⏸'; }
+  else { audioEl.pause(); playBtn.textContent = '▶'; }
+}
+
+audioEl.addEventListener('timeupdate', () => {
+  const t = audioEl.currentTime, d = audioEl.duration||1;
+  const pct = (t/d)*100;
+  progressBar.style.width = pct+'%';
+  progressLine.style.left = pct+'%';
+  timeDisplay.textContent = `${fmt(t)} / ${fmt(d)}`;
+});
+audioEl.addEventListener('ended', () => { playBtn.textContent = '▶'; });
+timelineWrap.addEventListener('click', e => {
+  const rect = timelineWrap.getBoundingClientRect();
+  audioEl.currentTime = ((e.clientX-rect.left)/rect.width) * (audioEl.duration||0);
+});
+
+async function drawWaveform(file) {
+  const ctx = new AudioContext();
+  try {
+    const decoded = await ctx.decodeAudioData(await file.arrayBuffer());
+    const data = decoded.getChannelData(0);
+    const canvas = document.getElementById('waveform');
+    const W = timelineWrap.offsetWidth;
+    const H = 52;
+    canvas.width = W * devicePixelRatio;
+    canvas.height = H * devicePixelRatio;
+    const c = canvas.getContext('2d');
+    c.scale(devicePixelRatio, devicePixelRatio);
+    const step = Math.ceil(data.length/W);
+    const mid = H/2;
+    c.fillStyle = '#1c1c24'; c.fillRect(0,0,W,H);
+    for(let i=0;i<W;i++) {
+      let max=0;
+      for(let j=0;j<step;j++) { const v=Math.abs(data[i*step+j]||0); if(v>max)max=v; }
+      const h = max*(H*0.9);
+      c.fillStyle = `rgba(74,240,200,${0.35+max*0.65})`;
+      c.fillRect(i, mid-h/2, 1, h||1);
+    }
+  } catch(e) {}
+  ctx.close();
+}
+
+function fmt(s) { const m=Math.floor(s/60),sec=Math.floor(s%60); return `${m}:${String(sec).padStart(2,'0')}`; }
+
+// ── Scenes ──
+const TAGS = ['action','calm','dramatic','cut','loop'];
+const TAGNAMES = { action:'アクション', calm:'落ち着き', dramatic:'ドラマチック', cut:'カット転換', loop:'ループ' };
+
+function addScene(noTimestamp = false) {
+  if (!activeId) return;
+  const t = (noTimestamp === true) ? null : audioEl.currentTime;
+  const id = Date.now();
+  const scene = { id, time: t, title: '', memo: '', tags: [] };
+  projects[activeId].scenes = projects[activeId].scenes || [];
+  projects[activeId].scenes.push(scene);
+  if (t !== null) projects[activeId].scenes.sort((a,b) => (a.time??999999)-(b.time??999999));
+  renderScenes();
+  updateProgress();
+  if (t !== null) addPin(t);
+  scheduleSave(activeId);
+  setTimeout(() => { const el = document.getElementById(`title-${id}`); if(el) el.focus(); }, 50);
+}
+
+function addPin(t) {
+  const d = audioEl.duration||1;
+  const pin = document.createElement('div');
+  pin.className = 'pin-marker';
+  pin.style.left = (t/d*100)+'%';
+  timelineWrap.appendChild(pin);
+}
+function clearPins() { timelineWrap.querySelectorAll('.pin-marker').forEach(p=>p.remove()); }
+function rebuildPins() {
+  clearPins();
+  if (!activeId) return;
+  (projects[activeId].scenes||[]).forEach(s => { if(s.time !== null && s.time !== undefined) addPin(s.time); });
+}
+
+function renderScenes() {
+  if (!activeId) return;
+  const scenes = projects[activeId].scenes || [];
+  emptyState.style.display = scenes.length ? 'none' : '';
+  sceneCountEl.textContent = scenes.length + ' シーン';
+  sceneList.innerHTML = '';
+
+  scenes.forEach((s, idx) => {
+    const card = document.createElement('div');
+    card.className = 'scene-card';
+    const timeLabel = s.time !== null && s.time !== undefined ? fmt(s.time) : '——';
+    const seekable  = s.time !== null && s.time !== undefined;
+    const tagsHtml = TAGS.map(t =>
+      `<span class="tag ${t} ${(s.tags||[]).includes(t)?'selected':''}" data-tag="${t}" data-id="${s.id}">${TAGNAMES[t]}</span>`
+    ).join('');
+
+    card.innerHTML = `
+      <div class="scene-card-header">
+        <span class="scene-num">${String(idx+1).padStart(2,'0')}</span>
+        <span class="scene-time" style="${seekable?'':'cursor:default;color:var(--muted)'}" data-seek="${s.time}">${timeLabel}</span>
+        <input class="scene-title-input" id="title-${s.id}" value="${escHtml(s.title)}" placeholder="シーン名…" data-id="${s.id}">
+        <button class="scene-delete" data-del="${s.id}">✕</button>
+      </div>
+      <div class="scene-body">
+        <textarea class="scene-memo-input" placeholder="動き・カメラ・雰囲気など…" data-memo="${s.id}">${escHtml(s.memo)}</textarea>
+        <div class="scene-tags">${tagsHtml}</div>
+      </div>`;
+    sceneList.appendChild(card);
+  });
+
+  sceneList.querySelectorAll('.scene-time').forEach(el => {
+    if(el.dataset.seek && el.dataset.seek !== 'null') {
+      el.addEventListener('click', () => { audioEl.currentTime = parseFloat(el.dataset.seek); });
+    }
+  });
+  sceneList.querySelectorAll('.scene-title-input').forEach(el => {
+    el.addEventListener('input', () => {
+      const s = projects[activeId]?.scenes?.find(x=>x.id==el.dataset.id);
+      if(s) { s.title = el.value; renderTabs(); scheduleSave(activeId); }
+    });
+  });
+  sceneList.querySelectorAll('.scene-memo-input').forEach(el => {
+    el.style.height = 'auto'; el.style.height = el.scrollHeight+'px';
+    el.addEventListener('input', () => {
+      el.style.height = 'auto'; el.style.height = el.scrollHeight+'px';
+      const s = projects[activeId]?.scenes?.find(x=>x.id==el.dataset.memo);
+      if(s) { s.memo = el.value; scheduleSave(activeId); }
+    });
+  });
+  sceneList.querySelectorAll('.scene-delete').forEach(el => {
+    el.addEventListener('click', () => {
+      projects[activeId].scenes = projects[activeId].scenes.filter(x=>x.id!=el.dataset.del);
+      renderScenes(); updateProgress(); rebuildPins(); scheduleSave(activeId);
+    });
+  });
+  sceneList.querySelectorAll('.tag').forEach(el => {
+    el.addEventListener('click', () => {
+      const s = projects[activeId]?.scenes?.find(x=>x.id==el.dataset.id);
+      if(!s) return;
+      if(!s.tags) s.tags=[];
+      const t = el.dataset.tag;
+      if(s.tags.includes(t)) s.tags=s.tags.filter(x=>x!==t); else s.tags.push(t);
+      el.classList.toggle('selected');
+      scheduleSave(activeId);
+    });
+  });
+}
+
+function updateProgress() {
+  if (!activeId) return;
+  const n = (projects[activeId]?.scenes||[]).length;
+  const target = 8;
+  const pct = Math.min(n/target,1);
+  ringCircle.style.strokeDashoffset = 125.6 - 125.6*pct;
+  ringNum.textContent = n;
+  progressFill.style.width = (pct*100)+'%';
+  if(n===0) todayMsg.textContent = '—';
+  else if(n<3) todayMsg.textContent = '🌱 いいスタート！';
+  else if(n<6) todayMsg.textContent = '✨ 順調に進んでる';
+  else if(n<8) todayMsg.textContent = '🔥 もう少しで完成形';
+  else todayMsg.textContent = '🎉 構成できてる！';
+}
+
+// ── Export ──
+document.getElementById('exportTxt').addEventListener('click', () => {
+  if(!activeId) return;
+  const scenes = projects[activeId].scenes||[];
+  if(!scenes.length) return alert('シーンがまだありません');
+  let txt = `【コマ割りメモ】${projects[activeId].name}\n`;
+  if(projects[activeId].desc) txt += `${projects[activeId].desc}\n`;
+  txt += `エクスポート: ${new Date().toLocaleString('ja-JP')}\n\n`;
+  scenes.forEach((s,i) => {
+    const t = s.time !== null && s.time !== undefined ? fmt(s.time) : '——';
+    txt += `[${String(i+1).padStart(2,'0')}] ${t}  ${s.title||'（無題）'}\n`;
+    if((s.tags||[]).length) txt += `  タグ: ${s.tags.map(t=>TAGNAMES[t]).join(' / ')}\n`;
+    if(s.memo) txt += `  ${s.memo.replace(/\n/g,'\n  ')}\n`;
+    txt += '\n';
+  });
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = document.getElementById('exportTxt');
+    btn.textContent = '✅ コピーしました';
+    setTimeout(()=>btn.textContent='📄 テキストでコピー', 2000);
+  });
+});
+
+document.getElementById('exportJson').addEventListener('click', () => {
+  if(!activeId) return;
+  const data = { project: projects[activeId].name, exportedAt: new Date().toISOString(), scenes: projects[activeId].scenes||[] };
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`${projects[activeId].name}-scenes.json`; a.click();
+});
+
+// ── Keyboard ──
+document.addEventListener('keydown', e => {
+  const active = document.activeElement;
+  const isInput = active.tagName==='INPUT'||active.tagName==='TEXTAREA';
+  if(e.code==='Space'&&!isInput) { e.preventDefault(); togglePlay(); }
+  if(e.code==='KeyM'&&!isInput) { e.preventDefault(); addScene(); }
+  if(e.code==='ArrowLeft'&&!isInput) { e.preventDefault(); audioEl.currentTime=Math.max(0,audioEl.currentTime-5); }
+  if(e.code==='ArrowRight'&&!isInput) { e.preventDefault(); audioEl.currentTime=Math.min(audioEl.duration||0,audioEl.currentTime+5); }
+});
+
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
