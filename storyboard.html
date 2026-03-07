@@ -463,7 +463,10 @@
     if (!p) return;
     currentId = id;
     document.getElementById('project-title-input').value = p.title || '無題';
-    document.getElementById('text-input').value = p.text || '';
+    const ta = document.getElementById('text-input');
+    ta.value = p.text || '';
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
     if (p.text && p.text.trim()) {
       buildBoardInternal(p.text);
     } else {
@@ -608,12 +611,6 @@
     ta.style.height = ta.scrollHeight + 'px';
   };
   ta.addEventListener('input', autoResize);
-  // プロジェクト読み込み時にも高さをリセット
-  const origLoadProject = loadProject;
-  function loadProject(id) {
-    origLoadProject(id);
-    setTimeout(autoResize, 0);
-  }
 
   loadProjects();
 </script>
