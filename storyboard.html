@@ -215,19 +215,17 @@
 
   textarea {
     width: 100%;
-    min-height: 90px;
-    height: auto;
+    height: 90px;
     padding: 10px 12px;
     font-family: 'Noto Sans JP', sans-serif;
-    font-size: 16px;
+    font-size: 13px;
     line-height: 1.7;
     background: #fff;
     border: 1px solid var(--rule);
     border-radius: 4px;
-    resize: none;
+    resize: vertical;
     color: var(--ink);
     outline: none;
-    overflow: hidden;
   }
   textarea:focus { border-color: var(--ink); }
 
@@ -464,8 +462,6 @@
     currentId = id;
     document.getElementById('project-title-input').value = p.title || '無題';
     document.getElementById('text-input').value = p.text || '';
-    document.getElementById('text-input').style.height = 'auto';
-    document.getElementById('text-input').style.height = document.getElementById('text-input').scrollHeight + 'px';
     if (p.text && p.text.trim()) {
       buildBoardInternal(p.text);
     } else {
@@ -602,14 +598,6 @@
   document.getElementById('text-input').addEventListener('keydown', e => {
     if (e.ctrlKey && e.key === 'Enter') window.buildBoard();
   });
-
-  // ─── AUTO RESIZE TEXTAREA ───
-  const taEl = document.getElementById('text-input');
-  const autoResize = () => {
-    taEl.style.height = 'auto';
-    taEl.style.height = taEl.scrollHeight + 'px';
-  };
-  taEl.addEventListener('input', autoResize);
 
   loadProjects();
 </script>
