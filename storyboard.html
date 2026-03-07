@@ -463,10 +463,9 @@
     if (!p) return;
     currentId = id;
     document.getElementById('project-title-input').value = p.title || '無題';
-    const ta = document.getElementById('text-input');
-    ta.value = p.text || '';
-    ta.style.height = 'auto';
-    ta.style.height = ta.scrollHeight + 'px';
+    document.getElementById('text-input').value = p.text || '';
+    document.getElementById('text-input').style.height = 'auto';
+    document.getElementById('text-input').style.height = document.getElementById('text-input').scrollHeight + 'px';
     if (p.text && p.text.trim()) {
       buildBoardInternal(p.text);
     } else {
@@ -605,12 +604,12 @@
   });
 
   // ─── AUTO RESIZE TEXTAREA ───
-  const ta = document.getElementById('text-input');
+  const taEl = document.getElementById('text-input');
   const autoResize = () => {
-    ta.style.height = 'auto';
-    ta.style.height = ta.scrollHeight + 'px';
+    taEl.style.height = 'auto';
+    taEl.style.height = taEl.scrollHeight + 'px';
   };
-  ta.addEventListener('input', autoResize);
+  taEl.addEventListener('input', autoResize);
 
   loadProjects();
 </script>
