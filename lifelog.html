@@ -477,14 +477,23 @@ function renderRecentMemos() {
   if (!recent.length) { card.style.display = "none"; return; }
   card.style.display = "block";
   list.innerHTML = recent.map(m =>
-    `<div class="memo-item">` +
-      `<div class="memo-text">${m.text}</div>` +
+    `<div class="memo-item" style="position:relative;">` +
+      `<div class="memo-text" style="padding-right:28px;">${m.text}</div>` +
       `<div class="memo-meta">` +
         `<span class="memo-date">${fmtDate(m.linkedDate)} ${fmtTime(m.id)}</span>` +
         (m.tags || []).map(t => `<span class="memo-tag">${t}</span>`).join("") +
       `</div>` +
+      `<button class="del-memo-btn" data-id="${m.id}" style="position:absolute;top:8px;right:8px;border:none;background:none;cursor:pointer;font-size:14px;color:#ddd;padding:2px;">🗑️</button>` +
     `</div>`
   ).join("");
+  list.querySelectorAll(".del-memo-btn").forEach(btn => {
+    btn.onclick = async () => {
+      if (!confirm("このメモを削除しますか？")) return;
+      memos = memos.filter(m => m.id !== Number(btn.dataset.id));
+      renderRecentMemos();
+      await saveCloud();
+    };
+  });
 }
 
 // ── history ────────────────────────────────────────────────
@@ -510,7 +519,10 @@ function renderHistory() {
       (isExp ?
         `<div class="log-body">` +
           `<pre class="log-pre">${buildLogText(log)}</pre>` +
-          `<button class="btn-secondary copy-one-btn" data-date="${log.date}">📋 このログ＋プロンプトをコピー</button>` +
+          `<div style="display:flex;gap:8px;">` +
+            `<button class="btn-secondary copy-one-btn" data-date="${log.date}" style="flex:1;">📋 このログ＋プロンプトをコピー</button>` +
+            `<button class="btn-secondary del-log-btn" data-date="${log.date}" style="flex:0 0 auto;color:#e06060;border-color:#f5c0c0;">🗑️ 削除</button>` +
+          `</div>` +
         `</div>` : "") +
     `</div>`;
   }).join("");
@@ -526,6 +538,15 @@ function renderHistory() {
     btn.onclick = () => {
       const log = logs.find(l => l.date === btn.dataset.date);
       if (log) copyText(buildLogText(log) + PDCA_PROMPT, btn, "📋 このログ＋プロンプトをコピー");
+    };
+  });
+  list.querySelectorAll(".del-log-btn").forEach(btn => {
+    btn.onclick = async () => {
+      if (!confirm("このログを削除しますか？")) return;
+      logs = logs.filter(l => l.date !== btn.dataset.date);
+      if (expandedLog === btn.dataset.date) expandedLog = null;
+      renderHistory();
+      await saveCloud();
     };
   });
 }
