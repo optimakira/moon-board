@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>🌟 LifeLog</title>
+
+  <!-- Firebase compat (グローバルスコープで使える版) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(150deg, #f3eeff 0%, #fce6f8 55%, #e6f4ff 100%);
+      padding-bottom: 60px;
+      color: #333;
+    }
+    .header {
+      background: linear-gradient(90deg, #7c4dff, #e040fb);
+      padding: 18px 20px 14px;
+      border-radius: 0 0 22px 22px;
+      box-shadow: 0 4px 20px #7c4dff33;
+    }
+    .header h1 { color: white; font-weight: 900; font-size: 19px; letter-spacing: 0.06em; }
+    .header p  { color: rgba(255,255,255,0.7); font-size: 11px; margin-top: 2px; }
+    .wrapper { max-width: 480px; margin: 0 auto; padding: 14px 14px 0; }
+    .tabs {
+      display: flex; gap: 4px;
+      background: #ede8ff; border-radius: 13px;
+      padding: 4px; margin-bottom: 16px;
+    }
+    .tab-btn {
+      flex: 1; padding: 9px 0;
+      font-weight: 700; font-size: 12px;
+      background: transparent; color: #a090cc;
+      border: none; cursor: pointer; border-radius: 10px;
+      transition: all 0.15s;
+    }
+    .tab-btn.active { background: #7c4dff; color: white; }
+    .card {
+      background: white; border-radius: 18px;
+      box-shadow: 0 2px 14px #7c4dff0d;
+      padding: 16px; margin-bottom: 14px;
+    }
+    .section-title { font-weight: 800; font-size: 14px; color: #7c4dff; margin-bottom: 11px; }
+    textarea, input[type="text"], input[type="date"] {
+      width: 100%; border-radius: 12px;
+      border: 2px solid #e8e0ff;
+      padding: 9px 12px; font-size: 13px;
+      color: #333; background: #faf8ff;
+      outline: none; font-family: inherit;
+      line-height: 1.7; transition: border-color 0.15s;
+      -webkit-appearance: none;
+    }
+    textarea { resize: vertical; }
+    textarea:focus, input:focus { border-color: #b48af0; }
+    input[type="range"] {
+      width: 100%; cursor: pointer;
+      border: none; background: none; padding: 0;
+    }
+    .btn-primary {
+      width: 100%; padding: 13px;
+      background: linear-gradient(90deg, #7c4dff, #e040fb);
+      color: white; font-weight: 900; font-size: 14px;
+      border: none; border-radius: 14px; cursor: pointer;
+      box-shadow: 0 3px 14px #7c4dff33;
+      font-family: inherit; transition: opacity 0.2s;
+    }
+    .btn-primary:active { opacity: 0.8; }
+    .btn-primary.saved { background: linear-gradient(90deg, #43c67a, #00bcd4); }
+    .btn-secondary {
+      width: 100%; padding: 10px;
+      background: #f0ebff; color: #7c4dff;
+      font-weight: 700; font-size: 13px;
+      border: 2px solid #e0d5ff; border-radius: 12px;
+      cursor: pointer; font-family: inherit;
+    }
+    .btn-export {
+      width: 100%; padding: 12px;
+      background: linear-gradient(90deg, #00bcd4, #7c4dff);
+      color: white; font-weight: 800; font-size: 13px;
+      border: none; border-radius: 14px; cursor: pointer;
+      box-shadow: 0 3px 12px #00bcd433;
+      margin-bottom: 14px; font-family: inherit;
+    }
+    .tag-btn {
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 12px; font-weight: 700;
+      border: 2px solid #ddd;
+      background: white; color: #aaa;
+      cursor: pointer; transition: all 0.12s;
+    }
+    .tag-btn.active { border-color: #7c4dff; background: #ede8ff; color: #7c4dff; }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+    .habit-btn {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 11px 13px; border-radius: 14px;
+      border: 2px solid #c4b0f055; background: #f0ebff;
+      cursor: pointer; margin-bottom: 7px;
+      font-family: inherit;
+    }
+    .habit-status {
+      font-size: 12px; font-weight: 700;
+      background: white; border-radius: 10px;
+      padding: 2px 10px; white-space: nowrap;
+    }
+    .score-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+    .score-label { font-weight: 700; font-size: 13px; color: #555; }
+    .score-value { font-size: 13px; font-weight: 700; }
+    .sub-label { font-weight: 700; font-size: 12px; color: #888; margin-bottom: 5px; margin-top: 10px; }
+    .memo-item {
+      padding: 10px 12px; border-radius: 12px;
+      background: #faf8ff; border: 1.5px solid #e8e0ff; margin-bottom: 8px;
+    }
+    .memo-text { font-size: 13px; color: #333; line-height: 1.6; }
+    .memo-meta { margin-top: 5px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .memo-date { font-size: 10px; color: #bbb; }
+    .memo-tag { font-size: 10px; font-weight: 700; color: #7c4dff; background: #ede8ff; border-radius: 8px; padding: 1px 7px; }
+    .log-card { background: white; border-radius: 18px; box-shadow: 0 2px 12px #7c4dff0d; margin-bottom: 12px; overflow: hidden; }
+    .log-header {
+      width: 100%; padding: 13px 15px;
+      background: none; border: none; cursor: pointer;
+      display: flex; align-items: center; gap: 10px;
+      text-align: left; font-family: inherit;
+    }
+    .log-date { font-weight: 800; font-size: 14px; color: #333; }
+    .log-meta { font-size: 11px; color: #bbb; margin-top: 2px; }
+    .log-body { padding: 0 15px 15px; border-top: 1px solid #f0ebff; }
+    .log-pre {
+      font-size: 11px; color: #555; background: #faf8ff;
+      border-radius: 10px; padding: 12px; margin: 12px 0;
+      white-space: pre-wrap; font-family: inherit; line-height: 1.7;
+    }
+    .linked-memo { font-size: 12px; color: #555; margin-bottom: 6px; line-height: 1.6; }
+    .linked-time { color: #c4b0f0; margin-right: 6px; }
+    .date-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .date-row span { font-size: 12px; color: #888; font-weight: 600; white-space: nowrap; }
+    .hint { font-size: 11px; color: #bbb; text-align: center; margin-bottom: 14px; margin-top: -8px; }
+    .empty { text-align: center; padding: 60px 20px; color: #bbb; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🌟 LifeLog</h1>
+  <p>気づいたらメモ → 1日の終わりにログ → AIに渡す</p>
+</div>
+
+<div class="wrapper">
+  <div class="tabs">
+    <button class="tab-btn active" id="tabBtnMemo">💬 気づきメモ</button>
+    <button class="tab-btn" id="tabBtnLog">📋 今日のログ</button>
+    <button class="tab-btn" id="tabBtnHistory">📚 履歴(0)</button>
+  </div>
+
+  <!-- MEMO -->
+  <div id="tab-memo">
+    <div class="card">
+      <div class="section-title">💬 気づきメモ</div>
+      <textarea id="memoText" rows="4" placeholder="思ったこと、気になったこと、なんでも…&#10;Twitterに書くつもりで気軽に"></textarea>
+      <div class="tag-row" id="tagRow"></div>
+      <div class="date-row">
+        <span>紐付け日：</span>
+        <input type="date" id="memoLink" style="width:auto; flex:1;">
+      </div>
+      <button class="btn-primary" id="saveMemoBtn">💾 メモを保存</button>
+    </div>
+    <div class="card" id="recentMemosCard" style="display:none;">
+      <div class="section-title">🕐 最近のメモ</div>
+      <div id="recentMemosList"></div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div id="tab-log" style="display:none;">
+    <div style="margin-bottom:14px;">
+      <div class="sub-label" style="margin-top:0;">📅 日付</div>
+      <input type="date" id="logDate" style="width:auto;">
+    </div>
+    <div class="card">
+      <div class="section-title">📊 今日のスコア</div>
+      <div class="score-row">
+        <span class="score-label">気分</span>
+        <span class="score-value" id="moodLabel" style="color:#e040fb;">😐 普通</span>
+      </div>
+      <input type="range" min="1" max="5" value="3" id="moodSlider" style="accent-color:#e040fb; margin-bottom:14px;">
+      <div class="score-row">
+        <span class="score-label">体調</span>
+        <span class="score-value" id="energyLabel" style="color:#00bcd4;">🌤 まあまあ</span>
+      </div>
+      <input type="range" min="1" max="5" value="3" id="energySlider" style="accent-color:#00bcd4;">
+    </div>
+    <div class="card">
+      <div class="section-title">✅ 習慣チェック</div>
+      <div style="font-size:11px; color:#bbb; margin-top:-7px; margin-bottom:9px;">タップで切替</div>
+      <div id="habitList"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">✍️ メモ</div>
+      <div class="sub-label" style="margin-top:0;">やったこと</div>
+      <textarea id="logDone" rows="3" placeholder="今日進んだこと、やれたこと…"></textarea>
+      <div class="sub-label">気になったこと・引っかかり</div>
+      <textarea id="logConcerns" rows="3" placeholder="もやっとしたこと、違和感…"></textarea>
+    </div>
+    <div class="card" id="linkedMemosCard" style="display:none; background:#faf8ff; border:2px solid #e8e0ff;">
+      <div class="section-title">💬 この日の気づきメモ</div>
+      <div id="linkedMemosList"></div>
+    </div>
+    <button class="btn-primary" id="saveLogBtn">💾 ログを保存する</button>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="tab-history" style="display:none;">
+    <div id="historyEmpty" class="empty">
+      まだログがありません<br><span style="font-size:11px;">記録して保存してみよう</span>
+    </div>
+    <div id="historyContent" style="display:none;">
+      <button class="btn-export" id="exportBtn">🤖 全ログ＋PDCAプロンプトをコピー</button>
+      <div class="hint">コピーしてClaude/ChatGPTに貼り付けるだけ</div>
+      <div id="logList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Firebase init ──────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyBEE451bCNLV-Ty337LyZryFlZqqiN4mxo",
+  authDomain: "moonboard-27ebf.firebaseapp.com",
+  projectId: "moonboard-27ebf",
+  storageBucket: "moonboard-27ebf.firebasestorage.app",
+  messagingSenderId: "437383444283",
+  appId: "1:437383444283:web:f2fab00c5e190b2ca9291e"
+};
+firebase.initializeApp(firebaseConfig);
+const db     = firebase.firestore();
+const docRef = db.collection("data").doc("lifelog-v1");
+
+// ── constants ──────────────────────────────────────────────
+const HABITS = [
+  { id:"sleep",     label:"睡眠", icon:"🌙", detail:"22時就寝できた？" },
+  { id:"breakfast", label:"朝食", icon:"🍳", detail:"朝ごはん食べた？" },
+  { id:"bento",     label:"弁当", icon:"🍱", detail:"お弁当作れた？"   },
+  { id:"study",     label:"勉強", icon:"📚", detail:"課題・学習できた？" },
+  { id:"creative",  label:"創作", icon:"🎨", detail:"YouTube・創作作業した？" },
+];
+const STATUS = {
+  "null":  { label:"─",       bg:"#f0ebff", color:"#c4b0f0" },
+  "true":  { label:"できた",   bg:"#d4f5e2", color:"#1a9952" },
+  partial: { label:"なんとか", bg:"#fff0c0", color:"#b37800" },
+  skip:    { label:"スキップ", bg:"#f0f0f0", color:"#aaa"    },
+};
+const STATUS_CYCLE  = ["null","true","partial","skip"];
+const MOOD_LABELS   = ["最悪","つらい","普通","いい感じ","最高"];
+const ENERGY_LABELS = ["死んでる","しんどい","まあまあ","元気","超元気"];
+const MOOD_EMOJI    = ["😞","😕","😐","🙂","😄"];
+const ENERGY_EMOJI  = ["🪫","😴","🌤","⚡","🔥"];
+const TAG_PRESETS   = ["仕事","創作","体調","習慣","気づき","感情"];
+const PDCA_PROMPT   = `
+━━━━━━━━━━━━━━━━━━━━
+📌 PDCAプロンプト
+━━━━━━━━━━━━━━━━━━━━
+上記は私のライフログ＋気づきメモです。以下の手順で回答してください。
+
+1. 問題・停滞の抽出
+   繰り返しているつまずき・後回しになっていること・気になっていることを3つ以内で。
+
+2. 原因の仮説
+   それぞれについて1〜2行で仮説を立ててください。
+
+3. PDCA計画（明日〜3日以内で動けるもの）
+   Plan / Do / Check / Act を「明日の朝◯時に◯◯する」レベルの具体アクションで。
+
+余計な激励・評価は不要です。事実ベースで淡々と出してください。`;
+
+// ── state ──────────────────────────────────────────────────
+let memos       = [];
+let logs        = [];
+let habitState  = {};
+let memoTags    = [];
+let expandedLog = null;
+let currentTab  = "memo";
+
+// ── helpers ────────────────────────────────────────────────
+function todayISO() { return new Date().toISOString().slice(0,10); }
+
+function fmtDate(iso) {
+  const d = new Date(iso + "T00:00:00");
+  const days = ["日","月","火","水","木","金","土"];
+  return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")} (${days[d.getDay()]})`;
+}
+
+function fmtTime(ts) {
+  const d = new Date(ts);
+  return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+}
+
+function buildLogText(log) {
+  const habitLines = HABITS.map(h => {
+    const key = (log.habits && log.habits[h.id]) ? log.habits[h.id] : "null";
+    return `  ${h.icon} ${h.label}：${STATUS[key].label}`;
+  }).join("\n");
+  const related = memos.filter(m => m.linkedDate === log.date);
+  const memoBlock = related.length
+    ? related.map(m => `  [${fmtTime(m.id)}] ${m.text}${m.tags && m.tags.length ? ` (${m.tags.join(", ")})` : ""}`).join("\n")
+    : "  （なし）";
+  return `📋 ライフログ ${fmtDate(log.date)}
+━━━━━━━━━━━━━━━━━━━━
+📊 スコア
+  気分：${log.mood}/5（${MOOD_EMOJI[log.mood-1]} ${MOOD_LABELS[log.mood-1]}）
+  体調：${log.energy}/5（${ENERGY_EMOJI[log.energy-1]} ${ENERGY_LABELS[log.energy-1]}）
+
+✅ 習慣チェック
+${habitLines}
+
+✍️ やったこと
+${(log.done || "").trim() || "  （記録なし）"}
+
+💭 気になったこと・引っかかり
+${(log.concerns || "").trim() || "  （記録なし）"}
+
+💬 その日の気づきメモ
+${memoBlock}
+━━━━━━━━━━━━━━━━━━━━`;
+}
+
+function copyText(text, btn, label) {
+  navigator.clipboard.writeText(text).then(() => {
+    if (!btn) return;
+    const orig = btn.textContent;
+    btn.textContent = "✅ コピーしました！";
+    setTimeout(() => btn.textContent = label || orig, 2000);
+  });
+}
+
+// ── Firebase ───────────────────────────────────────────────
+async function saveCloud() {
+  await docRef.set({ memos: memos, logs: logs });
+}
+
+docRef.onSnapshot(snap => {
+  if (snap.exists) {
+    const d = snap.data();
+    memos = d.memos || [];
+    logs  = d.logs  || [];
+  }
+  renderAll();
+});
+
+// ── tabs ───────────────────────────────────────────────────
+function switchTab(name) {
+  currentTab = name;
+  ["memo","log","history"].forEach(t => {
+    document.getElementById("tab-" + t).style.display = t === name ? "block" : "none";
+    document.getElementById("tabBtn" + t.charAt(0).toUpperCase() + t.slice(1))
+      .classList.toggle("active", t === name);
+  });
+  if (name === "log") renderLinkedMemos();
+}
+
+document.getElementById("tabBtnMemo").onclick    = () => switchTab("memo");
+document.getElementById("tabBtnLog").onclick     = () => switchTab("log");
+document.getElementById("tabBtnHistory").onclick = () => switchTab("history");
+
+// ── sliders ────────────────────────────────────────────────
+function updateSlider(type) {
+  const val    = parseInt(document.getElementById(type + "Slider").value);
+  const labels = type === "mood" ? MOOD_LABELS : ENERGY_LABELS;
+  const emojis = type === "mood" ? MOOD_EMOJI  : ENERGY_EMOJI;
+  document.getElementById(type + "Label").textContent = emojis[val-1] + " " + labels[val-1];
+}
+document.getElementById("moodSlider").oninput   = () => updateSlider("mood");
+document.getElementById("energySlider").oninput = () => updateSlider("energy");
+
+// ── habits ─────────────────────────────────────────────────
+function renderHabits() {
+  const container = document.getElementById("habitList");
+  container.innerHTML = "";
+  HABITS.forEach(h => {
+    const key = habitState[h.id] || "null";
+    const s   = STATUS[key];
+    const btn = document.createElement("button");
+    btn.className = "habit-btn";
+    btn.style.background  = s.bg;
+    btn.style.borderColor = s.color + "55";
+    btn.innerHTML =
+      `<span style="font-size:20px;">${h.icon}</span>` +
+      `<span style="flex:1;text-align:left;">` +
+        `<span style="font-weight:700;font-size:13px;color:#333;">${h.label}</span>` +
+        `<span style="font-size:11px;color:#999;margin-left:7px;">${h.detail}</span>` +
+      `</span>` +
+      `<span class="habit-status" style="color:${s.color};border:1.5px solid ${s.color}44;">${s.label}</span>`;
+    btn.onclick = () => {
+      const idx = STATUS_CYCLE.indexOf(key);
+      habitState[h.id] = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
+      renderHabits();
+    };
+    container.appendChild(btn);
+  });
+}
+
+// ── tags ───────────────────────────────────────────────────
+function renderTagRow() {
+  const row = document.getElementById("tagRow");
+  row.innerHTML = "";
+  TAG_PRESETS.forEach(t => {
+    const btn = document.createElement("button");
+    btn.className = "tag-btn" + (memoTags.includes(t) ? " active" : "");
+    btn.textContent = t;
+    btn.onclick = () => {
+      memoTags = memoTags.includes(t) ? memoTags.filter(x => x !== t) : [...memoTags, t];
+      renderTagRow();
+    };
+    row.appendChild(btn);
+  });
+}
+
+// ── save memo ──────────────────────────────────────────────
+document.getElementById("saveMemoBtn").onclick = async function() {
+  const text = document.getElementById("memoText").value.trim();
+  if (!text) return;
+  const link = document.getElementById("memoLink").value || todayISO();
+  memos = [{ id: Date.now(), text: text, tags: memoTags.slice(), linkedDate: link }, ...memos];
+  document.getElementById("memoText").value = "";
+  memoTags = [];
+  renderTagRow();
+  renderRecentMemos();
+  const btn = document.getElementById("saveMemoBtn");
+  btn.textContent = "✅ 保存しました！";
+  btn.classList.add("saved");
+  setTimeout(() => { btn.textContent = "💾 メモを保存"; btn.classList.remove("saved"); }, 1800);
+  await saveCloud();
+};
+
+// ── save log ───────────────────────────────────────────────
+document.getElementById("saveLogBtn").onclick = async function() {
+  const date    = document.getElementById("logDate").value || todayISO();
+  const mood    = parseInt(document.getElementById("moodSlider").value);
+  const energy  = parseInt(document.getElementById("energySlider").value);
+  const done    = document.getElementById("logDone").value;
+  const concerns= document.getElementById("logConcerns").value;
+  const log = { date: date, habits: Object.assign({}, habitState), mood: mood, energy: energy, done: done, concerns: concerns };
+  logs = [log].concat(logs.filter(l => l.date !== date)).sort((a,b) => b.date.localeCompare(a.date));
+  // reset
+  habitState = {}; renderHabits();
+  document.getElementById("moodSlider").value = 3; updateSlider("mood");
+  document.getElementById("energySlider").value = 3; updateSlider("energy");
+  document.getElementById("logDone").value = "";
+  document.getElementById("logConcerns").value = "";
+  renderHistory();
+  await saveCloud();
+  switchTab("history");
+};
+
+// ── linked memos ───────────────────────────────────────────
+function renderLinkedMemos() {
+  const date   = document.getElementById("logDate").value || todayISO();
+  const linked = memos.filter(m => m.linkedDate === date);
+  const card   = document.getElementById("linkedMemosCard");
+  const list   = document.getElementById("linkedMemosList");
+  if (!linked.length) { card.style.display = "none"; return; }
+  card.style.display = "block";
+  list.innerHTML = linked.map(m =>
+    `<div class="linked-memo"><span class="linked-time">[${fmtTime(m.id)}]</span>${m.text}</div>`
+  ).join("");
+}
+document.getElementById("logDate").onchange = renderLinkedMemos;
+
+// ── recent memos ───────────────────────────────────────────
+function renderRecentMemos() {
+  const card   = document.getElementById("recentMemosCard");
+  const list   = document.getElementById("recentMemosList");
+  const recent = memos.slice(0, 5);
+  if (!recent.length) { card.style.display = "none"; return; }
+  card.style.display = "block";
+  list.innerHTML = recent.map(m =>
+    `<div class="memo-item">` +
+      `<div class="memo-text">${m.text}</div>` +
+      `<div class="memo-meta">` +
+        `<span class="memo-date">${fmtDate(m.linkedDate)} ${fmtTime(m.id)}</span>` +
+        (m.tags || []).map(t => `<span class="memo-tag">${t}</span>`).join("") +
+      `</div>` +
+    `</div>`
+  ).join("");
+}
+
+// ── history ────────────────────────────────────────────────
+function renderHistory() {
+  const empty   = document.getElementById("historyEmpty");
+  const content = document.getElementById("historyContent");
+  const list    = document.getElementById("logList");
+  document.getElementById("tabBtnHistory").textContent = `📚 履歴(${logs.length})`;
+  if (!logs.length) { empty.style.display = "block"; content.style.display = "none"; return; }
+  empty.style.display = "none"; content.style.display = "block";
+  list.innerHTML = logs.map(log => {
+    const isExp = expandedLog === log.date;
+    const memoCount = memos.filter(m => m.linkedDate === log.date).length;
+    return `<div class="log-card">` +
+      `<button class="log-header" data-date="${log.date}">` +
+        `<span style="font-size:22px;">${MOOD_EMOJI[log.mood-1]}</span>` +
+        `<div style="flex:1;">` +
+          `<div class="log-date">${fmtDate(log.date)}</div>` +
+          `<div class="log-meta">気分 ${log.mood}/5 · 体調 ${log.energy}/5 · メモ ${memoCount}件</div>` +
+        `</div>` +
+        `<span style="color:#c4b0f0;">${isExp ? "▲" : "▼"}</span>` +
+      `</button>` +
+      (isExp ?
+        `<div class="log-body">` +
+          `<pre class="log-pre">${buildLogText(log)}</pre>` +
+          `<button class="btn-secondary copy-one-btn" data-date="${log.date}">📋 このログ＋プロンプトをコピー</button>` +
+        `</div>` : "") +
+    `</div>`;
+  }).join("");
+
+  // attach events after render
+  list.querySelectorAll(".log-header").forEach(btn => {
+    btn.onclick = () => {
+      expandedLog = expandedLog === btn.dataset.date ? null : btn.dataset.date;
+      renderHistory();
+    };
+  });
+  list.querySelectorAll(".copy-one-btn").forEach(btn => {
+    btn.onclick = () => {
+      const log = logs.find(l => l.date === btn.dataset.date);
+      if (log) copyText(buildLogText(log) + PDCA_PROMPT, btn, "📋 このログ＋プロンプトをコピー");
+    };
+  });
+}
+
+// ── export ─────────────────────────────────────────────────
+document.getElementById("exportBtn").onclick = function() {
+  const all = logs.map(l => buildLogText(l)).join("\n\n");
+  const orphans = memos.filter(m => !logs.find(l => l.date === m.linkedDate));
+  const orphanBlock = orphans.length
+    ? "\n\n💬 未紐付けメモ\n" + orphans.map(m => `  [${fmtTime(m.id)}] ${m.text}`).join("\n")
+    : "";
+  copyText(all + orphanBlock + PDCA_PROMPT, this, "🤖 全ログ＋PDCAプロンプトをコピー");
+};
+
+// ── init ───────────────────────────────────────────────────
+function renderAll() {
+  renderTagRow();
+  renderHabits();
+  renderRecentMemos();
+  renderHistory();
+  if (currentTab === "log") renderLinkedMemos();
+}
+
+document.getElementById("memoLink").value = todayISO();
+document.getElementById("logDate").value  = todayISO();
+updateSlider("mood");
+updateSlider("energy");
+renderAll();
+</script>
+</body>
+</html>
