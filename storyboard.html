@@ -218,19 +218,19 @@
 
   textarea {
     width: 100%;
-    min-height: 90px;
-    height: auto;
+    height: 90px;
+    max-height: 400px;
     padding: 10px 12px;
     font-family: 'Noto Sans JP', sans-serif;
-    font-size: 16px;
+    font-size: 13px;
     line-height: 1.7;
     background: #fff;
     border: 1px solid var(--rule);
     border-radius: 4px;
     resize: vertical;
+    overflow-y: scroll;
     color: var(--ink);
     outline: none;
-    overflow: hidden;
   }
   textarea:focus { border-color: var(--ink); }
 
