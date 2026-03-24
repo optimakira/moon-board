@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>絵コンテメーカー</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500&family=Bebas+Neue&display=swap');
@@ -215,17 +218,19 @@
 
   textarea {
     width: 100%;
-    height: 90px;
+    min-height: 90px;
+    height: auto;
     padding: 10px 12px;
     font-family: 'Noto Sans JP', sans-serif;
-    font-size: 13px;
+    font-size: 16px;
     line-height: 1.7;
     background: #fff;
     border: 1px solid var(--rule);
     border-radius: 4px;
-    resize: vertical;
+    resize: none;
     color: var(--ink);
     outline: none;
+    overflow: hidden;
   }
   textarea:focus { border-color: var(--ink); }
 
@@ -380,7 +385,10 @@
       <div class="input-row">
         <input type="text" id="project-title-input" placeholder="プロジェクト名..." value="無題">
       </div>
-      <label>テキストをペースト（空白行でコマ区切り）</label>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+        <label style="margin-bottom:0;">テキストをペースト（空白行でコマ区切り）</label>
+        <button id="resize-btn" onclick="cycleTextareaHeight()" style="font-size:11px; padding:3px 10px; background:transparent; border:1px solid var(--rule); border-radius:3px; color:var(--mid); cursor:pointer; font-family:'Noto Sans JP',sans-serif; flex-shrink:0;">↕ 広げる</button>
+      </div>
       <textarea id="text-input" placeholder="会話文や脚本をここにペースト..."></textarea>
     </div>
 
@@ -462,6 +470,8 @@
     currentId = id;
     document.getElementById('project-title-input').value = p.title || '無題';
     document.getElementById('text-input').value = p.text || '';
+    document.getElementById('text-input').style.height = 'auto';
+    document.getElementById('text-input').style.height = document.getElementById('text-input').scrollHeight + 'px';
     if (p.text && p.text.trim()) {
       buildBoardInternal(p.text);
     } else {
@@ -598,6 +608,16 @@
   document.getElementById('text-input').addEventListener('keydown', e => {
     if (e.ctrlKey && e.key === 'Enter') window.buildBoard();
   });
+
+  // ─── TEXTAREA HEIGHT CYCLE ───
+  const heights = [90, 200, 400];
+  const labels  = ['↕ 広げる', '↕ もっと', '↕ 縮める'];
+  let heightIdx = 0;
+  window.cycleTextareaHeight = () => {
+    heightIdx = (heightIdx + 1) % heights.length;
+    document.getElementById('text-input').style.height = heights[heightIdx] + 'px';
+    document.getElementById('resize-btn').textContent = labels[heightIdx];
+  };
 
   loadProjects();
 </script>
