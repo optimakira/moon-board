@@ -227,7 +227,7 @@
     background: #fff;
     border: 1px solid var(--rule);
     border-radius: 4px;
-    resize: none;
+    resize: vertical;
     color: var(--ink);
     outline: none;
     overflow: hidden;
@@ -385,10 +385,7 @@
       <div class="input-row">
         <input type="text" id="project-title-input" placeholder="プロジェクト名..." value="無題">
       </div>
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-        <label style="margin-bottom:0;">テキストをペースト（空白行でコマ区切り）</label>
-        <button id="resize-btn" onclick="cycleTextareaHeight()" style="font-size:11px; padding:3px 10px; background:transparent; border:1px solid var(--rule); border-radius:3px; color:var(--mid); cursor:pointer; font-family:'Noto Sans JP',sans-serif; flex-shrink:0;">↕ 広げる</button>
-      </div>
+      <label>テキストをペースト（空白行でコマ区切り）</label>
       <textarea id="text-input" placeholder="会話文や脚本をここにペースト..."></textarea>
     </div>
 
@@ -608,16 +605,6 @@
   document.getElementById('text-input').addEventListener('keydown', e => {
     if (e.ctrlKey && e.key === 'Enter') window.buildBoard();
   });
-
-  // ─── TEXTAREA HEIGHT CYCLE ───
-  const heights = [90, 200, 400];
-  const labels  = ['↕ 広げる', '↕ もっと', '↕ 縮める'];
-  let heightIdx = 0;
-  window.cycleTextareaHeight = () => {
-    heightIdx = (heightIdx + 1) % heights.length;
-    document.getElementById('text-input').style.height = heights[heightIdx] + 'px';
-    document.getElementById('resize-btn').textContent = labels[heightIdx];
-  };
 
   loadProjects();
 </script>
