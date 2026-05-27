@@ -739,6 +739,7 @@ async function exportImage() {
 // キャプチャ前
 document.querySelectorAll('.day-card').forEach(el => {
     el.style.background = '#ffffff';
+  
 
   el._origShadow = el.style.boxShadow;
   el.style.boxShadow = 'none';
@@ -748,6 +749,11 @@ document.querySelectorAll('.day-card').forEach(el => {
   grid.style.background = '#ffffff';
 grid.style.padding = '10px';
   // border-top はいじらない（金・青のラインを守る）
+});
+
+  // ← ここに独立して書く
+document.querySelectorAll('.display-area').forEach(el => {
+  el.style.background = '#ffffff';
 });
   
 // キャプチャ前：グリッド幅をコンテンツに合わせて広げる
@@ -788,7 +794,12 @@ document.querySelectorAll('.day-card').forEach(el => {
   el.style.borderBottom = '';
   el.style.borderLeft = '';
 });
-
+  
+// ← 独立して書く
+document.querySelectorAll('.display-area').forEach(el => {
+  el.style.background = '';
+});
+  
   // ダウンロード
   const link = document.createElement('a');
   const today = new Date();
