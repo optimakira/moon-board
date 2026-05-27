@@ -5,6 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>🌒</title>
     <style>
+      <!-- 印刷用画像生成ボタン -->
+<button onclick="exportImage()" style="
+  position: fixed; bottom: 20px; right: 20px;
+  background: #7a82f0; color: white;
+  border: none; border-radius: 12px;
+  padding: 12px 20px; font-size: 0.9rem;
+  cursor: pointer; box-shadow: 0 4px 12px rgba(122,130,240,0.4);
+  z-index: 9999;
+">📷 画像として保存</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+async function exportImage() {
+  // ヘッダー・テーマセクションを一時的に非表示
+  const hideEls = document.querySelectorAll('.header, #status, .planner-grid > div:first-child, .shift-selector');
+  hideEls.forEach(el => el.style.display = 'none');
+
+  // 編集エリアを表示エリアに切り替え
+  document.querySelectorAll('.edit-area').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.display-area').forEach(el => el.style.display = 'block');
+
+  const grid = document.getElementById('planner');
+
+  // 一時的に6列固定レイアウトに
+  const origStyle = grid.getAttribute('style') || '';
+  grid.style.gridTemplateColumns = 'repeat(6, 1fr)';
+  grid.style.gap = '6px';
+
+  // フォーカスカードのspan解除
+  document.querySelectorAll('.is-focus').forEach(el => {
+    el._origSpan = el.style.gridColumn;
+    el.style.gridColumn = 'span 1';
+  });
+
+  await new Promise(r => setTimeout(r, 100)); // レイアウト反映待ち
+
+  const canvas = await html2canvas(grid, {
+    scale: 2, // Retina対応
+    backgroundColor: '#f0f0f2',
+    useCORS: true,
+    scrollX: 0,
+    scrollY: -window.scrollY,
+  });
+
+  // 元に戻す
+  hideEls.forEach(el => el.style.display = '');
+  grid.setAttribute('style', origStyle);
+  document.querySelectorAll('.is-focus').forEach(el => {
+    el.style.gridColumn = el._origSpan || '';
+  });
+
+  // ダウンロード
+  const link = document.createElement('a');
+  const today = new Date();
+  link.download = `moonboard_${today.getFullYear()}${today.getMonth()+1}${today.getDate()}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+</script>
       body {
         font-family:
           "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
