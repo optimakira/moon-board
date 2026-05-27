@@ -742,10 +742,9 @@ const origMaxWidth = grid.style.maxWidth;
 
 // フォーカスカードがspan2なので、列数ではなく幅を広げて対応
 grid.style.maxWidth = 'none';
-grid.style.width = '980px';  // 画像全体の横幅
-grid.style.gridTemplateColumns = 'repeat(6, 1fr)';
+grid.style.width = 'auto';
+grid.style.gridTemplateColumns = 'repeat(6, 180px)';  // 列数×固定幅
 grid.style.gap = '6px';
-
 
   await new Promise(r => setTimeout(r, 100)); // レイアウト反映待ち
 
@@ -755,7 +754,7 @@ const canvas = await html2canvas(grid, {
   useCORS: true,
   scrollX: 0,
   scrollY: -window.scrollY,
-  windowWidth: 1000,  // ← これを追加
+  windowWidth: 1200,
 });
 
 // 元に戻す
