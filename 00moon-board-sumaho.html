@@ -738,14 +738,10 @@ async function exportImage() {
 
   // 一時的に6列固定レイアウトに
   const origStyle = grid.getAttribute('style') || '';
-  grid.style.gridTemplateColumns = 'repeat(6, 1fr)';
+  grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
   grid.style.gap = '6px';
 
-  // フォーカスカードのspan解除
-  document.querySelectorAll('.is-focus').forEach(el => {
-    el._origSpan = el.style.gridColumn;
-    el.style.gridColumn = 'span 1';
-  });
+
 
   await new Promise(r => setTimeout(r, 100)); // レイアウト反映待ち
 
@@ -760,9 +756,7 @@ async function exportImage() {
   // 元に戻す
   hideEls.forEach(el => el.style.display = '');
   grid.setAttribute('style', origStyle);
-  document.querySelectorAll('.is-focus').forEach(el => {
-    el.style.gridColumn = el._origSpan || '';
-  });
+
 
   // ダウンロード
   const link = document.createElement('a');
