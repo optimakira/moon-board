@@ -736,11 +736,15 @@ async function exportImage() {
 
   const grid = document.getElementById('planner');
 
-  // 一時的に6列固定レイアウトに
-  const origStyle = grid.getAttribute('style') || '';
-  grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
-  grid.style.gap = '6px';
+// キャプチャ前：グリッド幅をコンテンツに合わせて広げる
+const origStyle = grid.getAttribute('style') || '';
+const origMaxWidth = grid.style.maxWidth;
 
+// フォーカスカードがspan2なので、列数ではなく幅を広げて対応
+grid.style.maxWidth = 'none';
+grid.style.width = '1400px';  // 画像全体の横幅
+grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+grid.style.gap = '6px';
 
 
   await new Promise(r => setTimeout(r, 100)); // レイアウト反映待ち
@@ -753,9 +757,12 @@ async function exportImage() {
     scrollY: -window.scrollY,
   });
 
-  // 元に戻す
-  hideEls.forEach(el => el.style.display = '');
-  grid.setAttribute('style', origStyle);
+// 元に戻す
+hideEls.forEach(el => el.style.display = '');
+grid.style.maxWidth = origMaxWidth;
+grid.style.width = '';
+grid.style.gridTemplateColumns = '';
+grid.style.gap = '';
 
 
   // ダウンロード
