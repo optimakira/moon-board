@@ -735,7 +735,17 @@ async function exportImage() {
   document.querySelectorAll('.display-area').forEach(el => el.style.display = 'block');
 
   const grid = document.getElementById('planner');
-
+  
+// キャプチャ前
+document.querySelectorAll('.day-card').forEach(el => {
+  el._origShadow = el.style.boxShadow;
+  el.style.boxShadow = 'none';
+  el.style.borderRight = '1px solid #ddd';
+  el.style.borderBottom = '1px solid #ddd';
+  el.style.borderLeft = '1px solid #ddd';
+  // border-top はいじらない（金・青のラインを守る）
+});
+  
 // キャプチャ前：グリッド幅をコンテンツに合わせて広げる
 const origStyle = grid.getAttribute('style') || '';
 const origMaxWidth = grid.style.maxWidth;
@@ -750,7 +760,7 @@ grid.style.gap = '6px';
 
 const canvas = await html2canvas(grid, {
   scale: 2,
-  backgroundColor: '#f0f0f2',
+  backgroundColor: '#ffffff',
   useCORS: true,
   scrollX: 0,
   scrollY: -window.scrollY,
@@ -764,6 +774,13 @@ grid.style.width = '';
 grid.style.gridTemplateColumns = '';
 grid.style.gap = '';
 
+  // 元に戻す
+document.querySelectorAll('.day-card').forEach(el => {
+  el.style.boxShadow = el._origShadow || '';
+  el.style.borderRight = '';
+  el.style.borderBottom = '';
+  el.style.borderLeft = '';
+});
 
   // ダウンロード
   const link = document.createElement('a');
