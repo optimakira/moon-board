@@ -738,6 +738,8 @@ async function exportImage() {
   
 // キャプチャ前
 document.querySelectorAll('.day-card').forEach(el => {
+    el.style.background = '#ffffff';
+
   el._origShadow = el.style.boxShadow;
   el.style.boxShadow = 'none';
   el.style.borderRight = '1px solid #ddd';
@@ -780,6 +782,7 @@ grid.style.padding = '';
 
   // 元に戻す
 document.querySelectorAll('.day-card').forEach(el => {
+    el.style.background = '';
   el.style.boxShadow = el._origShadow || '';
   el.style.borderRight = '';
   el.style.borderBottom = '';
