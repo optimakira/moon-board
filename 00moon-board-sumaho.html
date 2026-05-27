@@ -743,6 +743,8 @@ document.querySelectorAll('.day-card').forEach(el => {
   el.style.borderRight = '1px solid #ddd';
   el.style.borderBottom = '1px solid #ddd';
   el.style.borderLeft = '1px solid #ddd';
+  grid.style.background = '#ffffff';
+grid.style.padding = '10px';
   // border-top はいじらない（金・青のラインを守る）
 });
   
@@ -773,6 +775,8 @@ grid.style.maxWidth = origMaxWidth;
 grid.style.width = '';
 grid.style.gridTemplateColumns = '';
 grid.style.gap = '';
+  grid.style.background = '';
+grid.style.padding = '';
 
   // 元に戻す
 document.querySelectorAll('.day-card').forEach(el => {
