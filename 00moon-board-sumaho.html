@@ -627,10 +627,8 @@
           card.className = `day-card ${moonPhaseClass} ${dString === today.toDateString() ? "is-today" : ""} ${isFocus ? "is-focus" : ""} ${d.getDay() === 6 ? "is-sat" : d.getDay() === 0 ? "is-sun" : ""}`;
 
           const storageKey = `moon_v23_${d.getFullYear()}${d.getMonth() + 1}${d.getDate()}`;
-          const shiftOptions =
-            d.getDay() === 3
-              ? ["15-18時 スマイル"]
-              : ["9:30-18:15", "9:30-15:30", "12:15-18:15", "12:00-18:00"];
+          const shiftOptions = ["9:30-18:15", "9:30-15:30", "12:15-18:15"];
+
           const savedShifts = cloudData[storageKey + "_shifts"] || [];
           const shiftHtml =
             `<div class="shift-selector">` +
